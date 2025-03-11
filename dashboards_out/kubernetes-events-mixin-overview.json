@@ -1,0 +1,114 @@
+{
+   "__inputs": [ ],
+   "__requires": [ ],
+   "description": "A dashboard that monitors Kubernetes Events and focuses on giving a overview for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin).",
+   "editable": true,
+   "links": [
+      {
+         "tags": [
+            "kubernetes-events",
+            "kubernetes-events-mixin"
+         ],
+         "targetBlank": true,
+         "title": "OpenCost",
+         "type": "dashboards"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "title": "Events Summary",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "{job=~\"$job\", k8s_resource_kind=~\"$kind\", k8s_resource_name=~\"$name\"} | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n"
+            }
+         ],
+         "title": "Events",
+         "type": "logs"
+      }
+   ],
+   "schemaVersion": 39,
+   "tags": [
+      "kubernetes-events",
+      "kubernetes-events-mixin"
+   ],
+   "templating": {
+      "list": [
+         {
+            "label": "Data source",
+            "name": "datasource",
+            "query": "loki",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "loki",
+               "uid": "${datasource}"
+            },
+            "label": "Job",
+            "name": "job",
+            "query": "job",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "loki",
+               "uid": "${datasource}"
+            },
+            "label": "Kind",
+            "name": "kind",
+            "query": "k8s_resource_kind",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "loki",
+               "uid": "${datasource}"
+            },
+            "label": "Name",
+            "name": "name",
+            "query": "k8s_resource_name",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-7d",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "Kubernetes / Events / Overview",
+   "uid": "kubernetes-events-mixin-kover-jkwq"
+}
