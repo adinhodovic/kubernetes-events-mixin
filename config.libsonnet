@@ -3,7 +3,6 @@ local annotation = g.dashboard.annotation;
 
 {
   _config+:: {
-    local this = self,
     // Bypasses grafana.com/dashboards validator
     bypassDashboardValidation: {
       __inputs: [],
@@ -17,7 +16,7 @@ local annotation = g.dashboard.annotation;
     kubernetesEventsOverviewDashboardUid: 'kubernetes-events-mixin-over-jkwq',
     kubernetesEventsTimelineDashboardUid: 'kubernetes-events-mixin-timeline-jkwq',
 
-    tags: ['kubernetes-events', 'kubernetes-events-mixin'],
+    tags: ['kubernetes', 'kubernetes-events', 'kubernetes-events-mixin'],
 
     // Custom annotations to display in graphs
     annotation: {

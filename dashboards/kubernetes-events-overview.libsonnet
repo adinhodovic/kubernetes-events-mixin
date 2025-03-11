@@ -7,31 +7,11 @@ local grid = g.util.grid;
 local variable = dashboard.variable;
 local datasource = variable.datasource;
 local query = variable.query;
-local textbox = variable.textbox;
-local loki = g.query.loki;
 local prometheus = g.query.prometheus;
 
-local statPanel = g.panel.stat;
-local logsPanel = g.panel.logs;
 local timeSeriesPanel = g.panel.timeSeries;
 local tablePanel = g.panel.table;
 local pieChartPanel = g.panel.pieChart;
-local stateTimelinePanel = g.panel.stateTimeline;
-
-// Stat
-local stOptions = statPanel.options;
-local stStandardOptions = statPanel.standardOptions;
-local stQueryOptions = statPanel.queryOptions;
-
-// Logs
-local lgOptions = logsPanel.options;
-local lgStandardOptions = logsPanel.standardOptions;
-local lgQueryOptions = logsPanel.queryOptions;
-
-// State Timeline
-local slOptions = stateTimelinePanel.options;
-local slStandardOptions = stateTimelinePanel.standardOptions;
-local slQueryOptions = stateTimelinePanel.queryOptions;
 
 // Timeseries
 local tsOptions = timeSeriesPanel.options;
@@ -50,9 +30,11 @@ local tbPanelOptions = tablePanel.panelOptions;
 local tbOverride = tbStandardOptions.override;
 
 // Pie Chart
-local pieOptions = pieChartPanel.options;
-local pieStandardOptions = pieChartPanel.standardOptions;
-local pieQueryOptions = pieChartPanel.queryOptions;
+local pcOptions = pieChartPanel.options;
+local pcStandardOptions = pieChartPanel.standardOptions;
+local pcQueryOptions = pieChartPanel.queryOptions;
+local pcOverride = pcStandardOptions.override;
+local pcLegend = pcOptions.legend;
 
 {
   grafanaDashboards+:: {
@@ -60,16 +42,16 @@ local pieQueryOptions = pieChartPanel.queryOptions;
     local datasourceVariable =
       datasource.new(
         'datasource',
-        'loki',
-      ) +
-      datasource.generalOptions.withLabel('Loki Data source'),
-
-    local prometheusDatasourceVariable =
-      datasource.new(
-        'prometheus_datasource',
         'prometheus',
       ) +
       datasource.generalOptions.withLabel('Prometheus Data source'),
+
+    local lokiDatasourceVariable =
+      datasource.new(
+        'loki_datasource',
+        'loki',
+      ) +
+      datasource.generalOptions.withLabel('Loki Data source'),
 
     local jobVariable =
       query.new(
@@ -77,7 +59,7 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       ) +
       query.queryTypes.withLabelValues('job') +
       query.withRegex('.*events.*') +
-      query.withDatasourceFromVariable(datasourceVariable) +
+      query.withDatasourceFromVariable(lokiDatasourceVariable) +
       query.withSort(1) +
       query.generalOptions.withLabel('Job') +
       query.refresh.onTime(),
@@ -86,7 +68,7 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       query.new(
         'kind',
       ) +
-      query.withDatasourceFromVariable(datasourceVariable) +
+      query.withDatasourceFromVariable(lokiDatasourceVariable) +
       query.withSort(1) +
       query.generalOptions.withLabel('Kind') +
       query.refresh.onLoad() +
@@ -104,7 +86,7 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       query.new(
         'namespace',
       ) +
-      query.withDatasourceFromVariable(datasourceVariable) +
+      query.withDatasourceFromVariable(lokiDatasourceVariable) +
       query.withSort(1) +
       query.generalOptions.withLabel('Namespace') +
       query.refresh.onLoad() +
@@ -118,28 +100,12 @@ local pieQueryOptions = pieChartPanel.queryOptions;
         },
       },
 
-    local nameVariable =
-      textbox.new(
-        'name',
-      ) +
-      textbox.generalOptions.withLabel('Name') +
-      textbox.generalOptions.withDescription('Name of the Kubernetes resource. Use the search, otherwise there is too many unique resources.'),
-
-    local searchVariable =
-      textbox.new(
-        'search',
-      ) +
-      textbox.generalOptions.withLabel('Search') +
-      textbox.generalOptions.withDescription('Generic search of the event.'),
-
     local variables = [
       datasourceVariable,
-      prometheusDatasourceVariable,
+      lokiDatasourceVariable,
       jobVariable,
       kindVariable,
       namespaceVariable,
-      nameVariable,
-      searchVariable,
     ],
 
     local eventsCountSumQuery = |||
@@ -153,7 +119,7 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       tsQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountSumQuery,
           ) +
           prometheus.withLegendFormat(
@@ -190,7 +156,7 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       tbQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountNormalSumQuery,
           ) +
           prometheus.withInstant(true) +
@@ -208,14 +174,27 @@ local pieQueryOptions = pieChartPanel.queryOptions;
               k8s_namespace_name: 'Namespace',
             },
             indexByName: {
-              Kind: 0,
-              Namespace: 1,
+              k8s_resource_kind: 0,
+              k8s_namespace_name: 1,
             },
             excludeByName: {
               Time: true,
               job: true,
             },
           }
+        ),
+      ]) +
+      tbStandardOptions.withOverrides([
+        tbOverride.byName.new('Kind') +
+        tbOverride.byName.withPropertiesFromOptions(
+          tbStandardOptions.withLinks(
+            tbPanelOptions.link.withTitle('Go To Timeline') +
+            tbPanelOptions.link.withType('dashboard') +
+            tbPanelOptions.link.withUrl(
+              '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.kubernetesEventsTimelineDashboardUid
+            ) +
+            tbPanelOptions.link.withTargetBlank(true)
+          )
         ),
       ]),
 
@@ -233,7 +212,7 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       tbQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountWarningSumQuery,
           ) +
           prometheus.withInstant(true) +
@@ -251,8 +230,8 @@ local pieQueryOptions = pieChartPanel.queryOptions;
               k8s_namespace_name: 'Namespace',
             },
             indexByName: {
-              Kind: 0,
-              Namespace: 1,
+              k8s_resource_kind: 0,
+              k8s_namespace_name: 1,
             },
             excludeByName: {
               Time: true,
@@ -260,73 +239,55 @@ local pieQueryOptions = pieChartPanel.queryOptions;
             },
           }
         ),
+      ]) +
+      tbStandardOptions.withOverrides([
+        tbOverride.byName.new('Kind') +
+        tbOverride.byName.withPropertiesFromOptions(
+          tbStandardOptions.withLinks(
+            tbPanelOptions.link.withTitle('Go To Timeline') +
+            tbPanelOptions.link.withType('dashboard') +
+            tbPanelOptions.link.withUrl(
+              '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.kubernetesEventsTimelineDashboardUid
+            ) +
+            tbPanelOptions.link.withTargetBlank(true)
+          )
+        ),
       ]),
 
-    local eventsCountQuery = |||
-      sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[24h]))
-    ||| % $._config,
-
-    local eventsCountStatPanel =
-      statPanel.new(
-        'Events[24h]',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$prometheus_datasource',
-          eventsCountQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('short') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.1) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
-
-    local eventsNormalCountQuery = |||
-      count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace", type="Normal"}[24h])
+    local eventsCountByType24hQuery = |||
+      sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[24h])) by (type)
     |||,
 
-    local eventsNormalCountStatPanel =
-      statPanel.new(
-        'Events Normal[24h]',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$prometheus_datasource',
-          eventsNormalCountQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('short') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.1) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
 
-    local eventsWarningCountQuery = std.strReplace(eventsNormalCountQuery, 'Normal', 'Warning'),
-
-    local eventsWarningCountStatPanel =
-      statPanel.new(
-        'Events Warning[24h]',
+    local eventsCountByType24hPieChartPanel =
+      pieChartPanel.new(
+        'Nodes by Node Pool'
       ) +
-      stQueryOptions.withTargets(
+      pcQueryOptions.withTargets(
         prometheus.new(
-          '$prometheus_datasource',
-          eventsWarningCountQuery,
-        )
+          '$datasource',
+          eventsCountByType24hQuery,
+        ) +
+        prometheus.withLegendFormat('{{ type }}') +
+        prometheus.withInstant(true)
       ) +
-      stStandardOptions.withUnit('short') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.1) +
-        stStandardOptions.threshold.step.withColor('green'),
+      pcOptions.withPieType('pie') +
+      pcOptions.legend.withAsTable(true) +
+      pcOptions.legend.withPlacement('right') +
+      pcOptions.legend.withDisplayMode('table') +
+      pcOptions.legend.withValues(['value', 'percent']) +
+      pcOptions.legend.withSortDesc(true) +
+      pcStandardOptions.withOverrides([
+        pcOverride.byName.new('Normal') +
+        pcOverride.byName.withPropertiesFromOptions(
+          pcStandardOptions.color.withMode('fixed') +
+          pcStandardOptions.color.withFixedColor('green')
+        ),
+        pcOverride.byName.new('Warning') +
+        pcOverride.byName.withPropertiesFromOptions(
+          pcStandardOptions.color.withMode('fixed') +
+          pcStandardOptions.color.withFixedColor('yellow')
+        ),
       ]),
 
     local eventsCountByTypeQuery = |||
@@ -340,7 +301,7 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       tsQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountByTypeQuery,
           ) +
           prometheus.withLegendFormat(
@@ -361,76 +322,6 @@ local pieQueryOptions = pieChartPanel.queryOptions;
       tsCustom.withFillOpacity(100) +
       tsCustom.withSpanNulls(false),
 
-    local eventsQuery = |||
-      {job=~"$job", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
-    |||,
-
-    local eventsLogsPanel =
-      logsPanel.new(
-        'Events',
-      ) +
-      lgQueryOptions.withTargets(
-        loki.new(
-          '$datasource',
-          eventsQuery,
-        ) +
-        loki.withMaxLines(100)
-      ) +
-      lgOptions.withShowTime(true) +
-      lgOptions.withWrapLogMessage(true) +
-      lgOptions.withEnableLogDetails(true),
-
-
-    local eventsTimelineQuery = |||
-      {job="$job", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format `{"{{ .kind }} / {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
-    |||,
-
-    local eventsTimelinePanel =
-      stateTimelinePanel.new(
-        'Events Timeline',
-      ) +
-      stateTimelinePanel.panelOptions.withDescription('Timeline of events for the selected Kubernetes resource. Please use the search filter, otherwise there will be too many events. Log line limit is at 50 events.') +
-      slQueryOptions.withTargets(
-        loki.new(
-          '$datasource',
-          eventsTimelineQuery,
-        ) +
-        loki.withMaxLines(50)
-      ) +
-      slQueryOptions.withTransformations(
-        slQueryOptions.transformation.withId('extractFields') +
-        slQueryOptions.transformation.withOptions(
-          {
-            delimiter: ',',
-            format: 'json',
-            keepTime: true,
-            replace: true,
-            source: 'Line',
-          },
-        )
-      ) +
-      slStandardOptions.withMappings(
-        [
-          slStandardOptions.mapping.RegexMap.withType() +
-          slStandardOptions.mapping.RegexMap.options.withPattern('.*Normal.*') +
-          slStandardOptions.mapping.RegexMap.options.result.withColor('green') +
-          slStandardOptions.mapping.RegexMap.options.result.withIndex(0),
-          slStandardOptions.mapping.RegexMap.withType() +
-          slStandardOptions.mapping.RegexMap.options.withPattern('.*Warning.*') +
-          slStandardOptions.mapping.RegexMap.options.result.withColor('orange') +
-          slStandardOptions.mapping.RegexMap.options.result.withIndex(1),
-        ]
-      ) +
-      {
-        fieldConfig+: {
-          defaults+: {
-            custom+: {
-              insertNulls: 300000,
-            },
-          },
-        },
-      },
-
     local summaryRow =
       row.new(
         title='Summary',
@@ -439,11 +330,6 @@ local pieQueryOptions = pieChartPanel.queryOptions;
     local eventsKindSummaryRow =
       row.new(
         title='Kind Summary ($kind / $namespace)',
-      ),
-
-    local eventsSummaryRow =
-      row.new(
-        title='Events Logs ($kind / $namespace / $name - name)',
       ),
 
     'kubernetes-events-mixin-overview.json':
@@ -496,43 +382,17 @@ local pieQueryOptions = pieChartPanel.queryOptions;
           row.gridPos.withW(24) +
           row.gridPos.withH(1),
         ] +
-        grid.makeGrid(
-          [
-            eventsCountStatPanel,
-            eventsNormalCountStatPanel,
-            eventsWarningCountStatPanel,
-          ],
-          panelWidth=8,
-          panelHeight=3,
-          startY=16
-        ) +
         [
+          eventsCountByType24hPieChartPanel +
+          pieChartPanel.gridPos.withX(0) +
+          pieChartPanel.gridPos.withY(16) +
+          pieChartPanel.gridPos.withW(6) +
+          pieChartPanel.gridPos.withH(6),
           eventCountByTypeTimeSeriesPanel +
-          timeSeriesPanel.gridPos.withX(0) +
-          timeSeriesPanel.gridPos.withY(19) +
-          timeSeriesPanel.gridPos.withW(24) +
+          timeSeriesPanel.gridPos.withX(6) +
+          timeSeriesPanel.gridPos.withY(16) +
+          timeSeriesPanel.gridPos.withW(18) +
           timeSeriesPanel.gridPos.withH(6),
-        ] +
-        [
-          eventsSummaryRow +
-          row.gridPos.withX(0) +
-          row.gridPos.withY(23) +
-          row.gridPos.withW(24) +
-          row.gridPos.withH(1),
-        ] +
-        [
-          eventsLogsPanel +
-          logsPanel.gridPos.withX(0) +
-          logsPanel.gridPos.withY(24) +
-          logsPanel.gridPos.withW(24) +
-          logsPanel.gridPos.withH(8),
-        ] +
-        [
-          eventsTimelinePanel +
-          stateTimelinePanel.gridPos.withX(0) +
-          stateTimelinePanel.gridPos.withY(32) +
-          stateTimelinePanel.gridPos.withW(24) +
-          stateTimelinePanel.gridPos.withH(8),
         ]
       ) +
       if $._config.annotation.enabled then

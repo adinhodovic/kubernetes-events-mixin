@@ -178,7 +178,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
     'kubernetes-events-mixin-timeline.json':
       $._config.bypassDashboardValidation +
       dashboard.new(
-        'Kubernetes / Events / timeline',
+        'Kubernetes / Events / Timeline',
       ) +
       dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin).') +
       dashboard.withUid($._config.kubernetesEventsTimelineDashboardUid) +
