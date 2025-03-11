@@ -10,7 +10,7 @@
             "kubernetes-events-mixin"
          ],
          "targetBlank": true,
-         "title": "OpenCost",
+         "title": "Kubernetes Events",
          "type": "dashboards"
       }
    ],

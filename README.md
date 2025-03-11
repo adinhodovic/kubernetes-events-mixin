@@ -1,6 +1,6 @@
-# Prometheus Monitoring Mixin for OpenCost
+# Prometheus Monitoring Mixin for Kubernetes Events
 
-A set of Grafana dashboards and Prometheus alerts for OpenCost.
+A set of Grafana dashboards and Prometheus alerts for Kubernetes Events.
 
 ## How to use
 

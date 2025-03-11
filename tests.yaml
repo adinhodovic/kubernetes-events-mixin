@@ -10,12 +10,12 @@ tests:
         values: "10x35"
     alert_rule_test:
       - eval_time: 35m
-        alertname: OpenCostMonthlyBudgetExceeded
+        alertname: Kubernetes EventsMonthlyBudgetExceeded
         exp_alerts:
           - exp_labels:
               severity: warning
             exp_annotations:
-              summary: "OpenCost Monthly Budget Exceeded"
+              summary: "Kubernetes Events Monthly Budget Exceeded"
               description: "The monthly budget for the cluster has been exceeded. Consider scaling down resources or increasing the budget."
               dashboard_url: "https://grafana.com/d/kubernetes-events-mixin-kover-jkwq/kubernetes-events-overview"
   - interval: 1m
@@ -26,12 +26,12 @@ tests:
         values: "1000000000000x35"
     alert_rule_test:
       - eval_time: 35m
-        alertname: OpenCostMonthlyBudgetExceeded
+        alertname: Kubernetes EventsMonthlyBudgetExceeded
         exp_alerts:
           - exp_labels:
               severity: warning
             exp_annotations:
-              summary: "OpenCost Monthly Budget Exceeded"
+              summary: "Kubernetes Events Monthly Budget Exceeded"
               description: "The monthly budget for the cluster has been exceeded. Consider scaling down resources or increasing the budget."
               dashboard_url: "https://grafana.com/d/kubernetes-events-mixin-kover-jkwq/kubernetes-events-overview"
   - interval: 1h
@@ -40,11 +40,11 @@ tests:
         values: "1x3 2000x3"
     alert_rule_test:
       - eval_time: 6h
-        alertname: OpenCostAnomalyDetected
+        alertname: Kubernetes EventsAnomalyDetected
         exp_alerts:
           - exp_labels:
               severity: warning
             exp_annotations:
-              summary: "OpenCost Cost Anomaly Detected"
+              summary: "Kubernetes Events Cost Anomaly Detected"
               description: "A significant increase in cluster costs has been detected. The average hourly cost over the 3 hours exceeds the 7-day average by more than 20%. This could indicate unexpected resource usage or cost-related changes in the cluster."
               dashboard_url: "https://grafana.com/d/kubernetes-events-mixin-kover-jkwq/kubernetes-events-overview"
