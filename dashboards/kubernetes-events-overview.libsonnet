@@ -114,7 +114,7 @@ local pcOverride = pcStandardOptions.override;
       timeSeriesPanel.new(
         'Events',
       ) +
-      timeSeriesPanel.panelOptions.withDescription('Total Event Emissions by Kind and Namespace[24h]') +
+      timeSeriesPanel.panelOptions.withDescription('Total Event Emissions by Kind and Namespace[1w]') +
       tsQueryOptions.withTargets(
         [
           prometheus.new(
@@ -140,14 +140,14 @@ local pcOverride = pcStandardOptions.override;
       tsCustom.withSpanNulls(false),
 
     local eventsCountNormalSumQuery = |||
-      topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type="Normal"}[24h])) by (k8s_resource_kind, k8s_namespace_name))
+      topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type="Normal"}[1w])) by (k8s_resource_kind, k8s_namespace_name))
     ||| % $._config,
 
     local eventsCountNormalSumTable =
       tablePanel.new(
-        'Top 10 Normal Event Emissions by Kind and Namespace[24h]',
+        'Top 10 Normal Event Emissions by Kind and Namespace[1w]',
       ) +
-      tablePanel.panelOptions.withDescription('Top 10 Normal Event Emissions by Kind and Namespace[24h]') +
+      tablePanel.panelOptions.withDescription('Top 10 Normal Event Emissions by Kind and Namespace[1w]') +
       tbStandardOptions.withUnit('short') +
       tbOptions.withSortBy(
         tbOptions.sortBy.withDisplayName('Value') +
@@ -203,9 +203,9 @@ local pcOverride = pcStandardOptions.override;
 
     local eventsCountWarningSumTable =
       tablePanel.new(
-        'Top 10 Warning Event Emissions by Kind and Namespace[24h]',
+        'Top 10 Warning Event Emissions by Kind and Namespace[1w]',
       ) +
-      tablePanel.panelOptions.withDescription('Top 10 Warning Event Emissions by Kind and Namespace[24h]') +
+      tablePanel.panelOptions.withDescription('Top 10 Warning Event Emissions by Kind and Namespace[1w]') +
       tbStandardOptions.withUnit('short') +
       tbOptions.withSortBy(
         tbOptions.sortBy.withDisplayName('Value') +
@@ -257,20 +257,20 @@ local pcOverride = pcStandardOptions.override;
         ),
       ]),
 
-    local eventsCountByType24hQuery = |||
-      sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[24h])) by (type)
+    local eventsCountByType1wQuery = |||
+      sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[1w])) by (type)
     |||,
 
 
-    local eventsCountByType24hPieChartPanel =
+    local eventsCountByType1wPieChartPanel =
       pieChartPanel.new(
-        'Events by Type[24h]'
+        'Events by Type[1w]'
       ) +
-      pieChartPanel.panelOptions.withDescription('Events by Type[24h]') +
+      pieChartPanel.panelOptions.withDescription('Events by Type[1w]') +
       pcQueryOptions.withTargets(
         prometheus.new(
           '$prometheus_datasource',
-          eventsCountByType24hQuery,
+          eventsCountByType1wQuery,
         ) +
         prometheus.withLegendFormat('{{ type }}') +
         prometheus.withInstant(true)
@@ -388,7 +388,7 @@ local pcOverride = pcStandardOptions.override;
           row.gridPos.withH(1),
         ] +
         [
-          eventsCountByType24hPieChartPanel +
+          eventsCountByType1wPieChartPanel +
           pieChartPanel.gridPos.withX(0) +
           pieChartPanel.gridPos.withY(16) +
           pieChartPanel.gridPos.withW(6) +

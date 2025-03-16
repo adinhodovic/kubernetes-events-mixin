@@ -33,7 +33,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Total Event Emissions by Kind and Namespace[24h]",
+         "description": "Total Event Emissions by Kind and Namespace[1w]",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -90,7 +90,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Top 10 Normal Event Emissions by Kind and Namespace[24h]",
+         "description": "Top 10 Normal Event Emissions by Kind and Namespace[1w]",
          "fieldConfig": {
             "defaults": {
                "unit": "short"
@@ -142,12 +142,12 @@
                   "type": "prometheus",
                   "uid": "$prometheus_datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Normal\"}[24h])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Normal\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
          ],
-         "title": "Top 10 Normal Event Emissions by Kind and Namespace[24h]",
+         "title": "Top 10 Normal Event Emissions by Kind and Namespace[1w]",
          "transformations": [
             {
                "id": "organize",
@@ -174,7 +174,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Top 10 Warning Event Emissions by Kind and Namespace[24h]",
+         "description": "Top 10 Warning Event Emissions by Kind and Namespace[1w]",
          "fieldConfig": {
             "defaults": {
                "unit": "short"
@@ -226,12 +226,12 @@
                   "type": "prometheus",
                   "uid": "$prometheus_datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Warning\"}[24h])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Warning\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
          ],
-         "title": "Top 10 Warning Event Emissions by Kind and Namespace[24h]",
+         "title": "Top 10 Warning Event Emissions by Kind and Namespace[1w]",
          "transformations": [
             {
                "id": "organize",
@@ -270,7 +270,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Events by Type[24h]",
+         "description": "Events by Type[1w]",
          "fieldConfig": {
             "overrides": [
                {
@@ -332,12 +332,12 @@
                   "type": "prometheus",
                   "uid": "$prometheus_datasource"
                },
-               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}[24h])) by (type)\n",
+               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}[1w])) by (type)\n",
                "instant": true,
                "legendFormat": "{{ type }}"
             }
          ],
-         "title": "Events by Type[24h]",
+         "title": "Events by Type[1w]",
          "type": "piechart"
       },
       {
