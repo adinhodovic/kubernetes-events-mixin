@@ -28,7 +28,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
         'datasource',
         'loki',
       ) +
-      datasource.generalOptions.withLabel('Loki Data source'),
+      datasource.generalOptions.withLabel('Data source'),
 
     local jobVariable =
       query.new(
@@ -78,16 +78,24 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
       },
 
     local nameVariable =
-      textbox.new(
-        'name',
+      // workaround for the name variable
+      variable.query.new(
+        'name'
       ) +
+      {
+        type: 'textbox',
+      } +
       textbox.generalOptions.withLabel('Name') +
       textbox.generalOptions.withDescription('Name of the Kubernetes resource. Use the search, otherwise there is too many unique resources.'),
 
     local searchVariable =
-      textbox.new(
-        'search',
+      // workaround for the textbox variable
+      variable.query.new(
+        'search'
       ) +
+      {
+        type: 'textbox',
+      } +
       textbox.generalOptions.withLabel('Search') +
       textbox.generalOptions.withDescription('Generic search of the event.'),
 
@@ -108,6 +116,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
       logsPanel.new(
         'Events',
       ) +
+      logsPanel.panelOptions.withDescription('Logs of events for the selected Kubernetes resource. Log line limit is at 100 events.') +
       lgQueryOptions.withTargets(
         loki.new(
           '$datasource',

@@ -25,7 +25,6 @@ local tsLegend = tsOptions.legend;
 local tbOptions = tablePanel.options;
 local tbStandardOptions = tablePanel.standardOptions;
 local tbQueryOptions = tablePanel.queryOptions;
-local tbFieldConfig = tablePanel.fieldConfig;
 local tbPanelOptions = tablePanel.panelOptions;
 local tbOverride = tbStandardOptions.override;
 
@@ -34,24 +33,23 @@ local pcOptions = pieChartPanel.options;
 local pcStandardOptions = pieChartPanel.standardOptions;
 local pcQueryOptions = pieChartPanel.queryOptions;
 local pcOverride = pcStandardOptions.override;
-local pcLegend = pcOptions.legend;
 
 {
   grafanaDashboards+:: {
 
-    local datasourceVariable =
+    local prometheusDatasourceVariable =
       datasource.new(
-        'datasource',
+        'prometheus_datasource',
         'prometheus',
       ) +
-      datasource.generalOptions.withLabel('Prometheus Data source'),
+      datasource.generalOptions.withLabel('Prometheus data source'),
 
     local lokiDatasourceVariable =
       datasource.new(
         'loki_datasource',
         'loki',
       ) +
-      datasource.generalOptions.withLabel('Loki Data source'),
+      datasource.generalOptions.withLabel('Loki data source'),
 
     local jobVariable =
       query.new(
@@ -101,7 +99,7 @@ local pcLegend = pcOptions.legend;
       },
 
     local variables = [
-      datasourceVariable,
+      prometheusDatasourceVariable,
       lokiDatasourceVariable,
       jobVariable,
       kindVariable,
@@ -116,10 +114,11 @@ local pcLegend = pcOptions.legend;
       timeSeriesPanel.new(
         'Events',
       ) +
+      timeSeriesPanel.panelOptions.withDescription('Total Event Emissions by Kind and Namespace[24h]') +
       tsQueryOptions.withTargets(
         [
           prometheus.new(
-            '$datasource',
+            '$prometheus_datasource',
             eventsCountSumQuery,
           ) +
           prometheus.withLegendFormat(
@@ -148,6 +147,7 @@ local pcLegend = pcOptions.legend;
       tablePanel.new(
         'Top 10 Normal Event Emissions by Kind and Namespace[24h]',
       ) +
+      tablePanel.panelOptions.withDescription('Top 10 Normal Event Emissions by Kind and Namespace[24h]') +
       tbStandardOptions.withUnit('short') +
       tbOptions.withSortBy(
         tbOptions.sortBy.withDisplayName('Value') +
@@ -157,7 +157,7 @@ local pcLegend = pcOptions.legend;
       tbQueryOptions.withTargets(
         [
           prometheus.new(
-            '$datasource',
+            '$prometheus_datasource',
             eventsCountNormalSumQuery,
           ) +
           prometheus.withInstant(true) +
@@ -205,6 +205,7 @@ local pcLegend = pcOptions.legend;
       tablePanel.new(
         'Top 10 Warning Event Emissions by Kind and Namespace[24h]',
       ) +
+      tablePanel.panelOptions.withDescription('Top 10 Warning Event Emissions by Kind and Namespace[24h]') +
       tbStandardOptions.withUnit('short') +
       tbOptions.withSortBy(
         tbOptions.sortBy.withDisplayName('Value') +
@@ -214,7 +215,7 @@ local pcLegend = pcOptions.legend;
       tbQueryOptions.withTargets(
         [
           prometheus.new(
-            '$datasource',
+            '$prometheus_datasource',
             eventsCountWarningSumQuery,
           ) +
           prometheus.withInstant(true) +
@@ -265,9 +266,10 @@ local pcLegend = pcOptions.legend;
       pieChartPanel.new(
         'Events by Type[24h]'
       ) +
+      pieChartPanel.panelOptions.withDescription('Events by Type[24h]') +
       pcQueryOptions.withTargets(
         prometheus.new(
-          '$datasource',
+          '$prometheus_datasource',
           eventsCountByType24hQuery,
         ) +
         prometheus.withLegendFormat('{{ type }}') +
@@ -300,10 +302,11 @@ local pcLegend = pcOptions.legend;
       timeSeriesPanel.new(
         'Events by Type',
       ) +
+      timeSeriesPanel.panelOptions.withDescription('Events by Type') +
       tsQueryOptions.withTargets(
         [
           prometheus.new(
-            '$datasource',
+            '$prometheus_datasource',
             eventsCountByTypeQuery,
           ) +
           prometheus.withLegendFormat(

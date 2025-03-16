@@ -6,6 +6,7 @@
    "links": [
       {
          "tags": [
+            "kubernetes",
             "kubernetes-events",
             "kubernetes-events-mixin"
          ],
@@ -24,7 +25,7 @@
             "y": 0
          },
          "id": 1,
-         "title": "Events Summary",
+         "title": "Summary",
          "type": "row"
       },
       {
@@ -32,60 +33,416 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
+         "description": "Total Event Emissions by Kind and Namespace[24h]",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 100,
+                  "spanNulls": false,
+                  "stacking": {
+                     "mode": "normal"
+                  }
+               },
+               "unit": "short"
+            }
+         },
          "gridPos": {
-            "h": 10,
+            "h": 6,
             "w": 24,
             "x": 0,
             "y": 1
          },
          "id": 2,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "lastNotNull",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right",
+               "showLegend": true,
+               "sortBy": "Last *",
+               "sortDesc": true
+            },
+            "tooltip": {
+               "mode": "multi",
+               "sort": "desc"
+            }
+         },
          "pluginVersion": "v11.4.0",
          "targets": [
             {
                "datasource": {
                   "type": "prometheus",
-                  "uid": "$datasource"
+                  "uid": "$prometheus_datasource"
                },
-               "expr": "{job=~\"$job\", k8s_resource_kind=~\"$kind\", k8s_resource_name=~\"$name\"} | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n"
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m) by (k8s_resource_kind, k8s_namespace_name, type)\n",
+               "legendFormat": "{{k8s_resource_kind}} / {{k8s_namespace_name}} / {{type}}"
             }
          ],
          "title": "Events",
-         "type": "logs"
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Top 10 Normal Event Emissions by Kind and Namespace[24h]",
+         "fieldConfig": {
+            "defaults": {
+               "unit": "short"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Kind"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "targetBlank": true,
+                              "title": "Go To Timeline",
+                              "type": "dashboard",
+                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 7
+         },
+         "id": 3,
+         "options": {
+            "footer": {
+               "enablePagination": true
+            },
+            "sortBy": [
+               {
+                  "desc": true,
+                  "displayName": "Value"
+               }
+            ]
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$prometheus_datasource"
+               },
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Normal\"}[24h])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Top 10 Normal Event Emissions by Kind and Namespace[24h]",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "job": true
+                  },
+                  "indexByName": {
+                     "k8s_namespace_name": 1,
+                     "k8s_resource_kind": 0
+                  },
+                  "renameByName": {
+                     "k8s_namespace_name": "Namespace",
+                     "k8s_resource_kind": "Kind"
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Top 10 Warning Event Emissions by Kind and Namespace[24h]",
+         "fieldConfig": {
+            "defaults": {
+               "unit": "short"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Kind"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "targetBlank": true,
+                              "title": "Go To Timeline",
+                              "type": "dashboard",
+                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 7
+         },
+         "id": 4,
+         "options": {
+            "footer": {
+               "enablePagination": true
+            },
+            "sortBy": [
+               {
+                  "desc": true,
+                  "displayName": "Value"
+               }
+            ]
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$prometheus_datasource"
+               },
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Warning\"}[24h])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Top 10 Warning Event Emissions by Kind and Namespace[24h]",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "job": true
+                  },
+                  "indexByName": {
+                     "k8s_namespace_name": 1,
+                     "k8s_resource_kind": 0
+                  },
+                  "renameByName": {
+                     "k8s_namespace_name": "Namespace",
+                     "k8s_resource_kind": "Kind"
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 15
+         },
+         "id": 5,
+         "title": "Kind Summary ($kind / $namespace)",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Events by Type[24h]",
+         "fieldConfig": {
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Normal"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Warning"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "yellow",
+                           "mode": "fixed"
+                        }
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 0,
+            "y": 16
+         },
+         "id": 6,
+         "options": {
+            "legend": {
+               "asTable": true,
+               "displayMode": "table",
+               "placement": "right",
+               "sortDesc": true,
+               "values": [
+                  "value",
+                  "percent"
+               ]
+            },
+            "pieType": "pie"
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$prometheus_datasource"
+               },
+               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}[24h])) by (type)\n",
+               "instant": true,
+               "legendFormat": "{{ type }}"
+            }
+         ],
+         "title": "Events by Type[24h]",
+         "type": "piechart"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Events by Type",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 100,
+                  "spanNulls": false,
+                  "stacking": {
+                     "mode": "normal"
+                  }
+               },
+               "unit": "short"
+            }
+         },
+         "gridPos": {
+            "h": 6,
+            "w": 18,
+            "x": 6,
+            "y": 16
+         },
+         "id": 7,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "lastNotNull",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right",
+               "showLegend": true,
+               "sortBy": "Last *",
+               "sortDesc": true
+            },
+            "tooltip": {
+               "mode": "multi",
+               "sort": "desc"
+            }
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$prometheus_datasource"
+               },
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}) by ( type)\n",
+               "legendFormat": "{{type}}"
+            }
+         ],
+         "title": "Events by Type",
+         "type": "timeseries"
       }
    ],
    "schemaVersion": 39,
    "tags": [
+      "kubernetes",
       "kubernetes-events",
       "kubernetes-events-mixin"
    ],
    "templating": {
       "list": [
          {
-            "label": "Data source",
-            "name": "datasource",
+            "label": "Prometheus data source",
+            "name": "prometheus_datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "label": "Loki data source",
+            "name": "loki_datasource",
             "query": "loki",
             "type": "datasource"
          },
          {
             "datasource": {
                "type": "loki",
-               "uid": "${datasource}"
+               "uid": "${loki_datasource}"
             },
             "label": "Job",
             "name": "job",
-            "query": "job",
+            "query": "label_values(job)",
             "refresh": 2,
+            "regex": ".*events.*",
             "sort": 1,
             "type": "query"
          },
          {
             "datasource": {
                "type": "loki",
-               "uid": "${datasource}"
+               "uid": "${loki_datasource}"
             },
             "label": "Kind",
             "name": "kind",
-            "query": "k8s_resource_kind",
+            "query": {
+               "label": "k8s_resource_kind",
+               "stream": "{job=~\"$job\"}",
+               "type": "1"
+            },
             "refresh": 2,
             "sort": 1,
             "type": "query"
@@ -93,11 +450,15 @@
          {
             "datasource": {
                "type": "loki",
-               "uid": "${datasource}"
+               "uid": "${loki_datasource}"
             },
-            "label": "Name",
-            "name": "name",
-            "query": "k8s_resource_name",
+            "label": "Namespace",
+            "name": "namespace",
+            "query": {
+               "label": "k8s_namespace_name",
+               "stream": "{job=~\"$job\", k8s_resource_kind=\"$kind\"}",
+               "type": "1"
+            },
             "refresh": 2,
             "sort": 1,
             "type": "query"
@@ -105,10 +466,10 @@
       ]
    },
    "time": {
-      "from": "now-7d",
+      "from": "now-3h",
       "to": "now"
    },
    "timezone": "utc",
    "title": "Kubernetes / Events / Overview",
-   "uid": "kubernetes-events-mixin-kover-jkwq"
+   "uid": "kubernetes-events-mixin-over-jkwq"
 }

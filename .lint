@@ -8,6 +8,6 @@ exclusions:
     reason: We don't use instances.
   panel-datasource-rule:
     reason: Using a datasource for each panel.
-  panel-title-description-rule:
-    reason: TODO(adinhodovic)
   target-instance-rule:
+  template-label-promql-rule:
+    reason: Weird issues with prom/loki ql.

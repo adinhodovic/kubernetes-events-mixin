@@ -1,6 +1,6 @@
-# Prometheus Monitoring Mixin for Kubernetes Events
+# Prometheus and Loki Monitoring Mixin for Kubernetes Events
 
-A set of Grafana dashboards and Prometheus alerts for Kubernetes Events.
+A set of Grafana dashboards and Loki rules for Kubernetes Events.
 
 ## How to use
 
@@ -36,41 +36,17 @@ jb install
 Finally, build the mixin:
 
 ```sh
-make prometheus_alerts.yaml
+make prometheus_rules.yaml
 make dashboards_out
 ```
 
-The `prometheus_alerts.yaml` file then need to passed
+The `prometheus_rules.yaml` file then need to passed
 to your Prometheus server, and the files in `dashboards_out` need to be imported
 into you Grafana server. The exact details will depending on how you deploy your
 monitoring stack.
 
-### Configuration
+## Loki Rules
 
-This mixin has its configuration in the `config.libsonnet` file. You can disable the alerts for cost alerts and anomalies by setting the `enabled` field to `false`.
+Note: The rules outputted by this mixin are intended to be used with Loki. This means that a `remote_write` configuration is required in your Loki setup and the rules should be picked up by Loki, not by Prometheus. The rules generate Prometheus metrics from the Loki logs, which can then be queried in Grafana.
 
-```jsonnet
-{
-  _config+:: {
-    alerts: {
-      budget: {
-        // Alerts if the cost is 200 USD (example).
-        // You need to configure this alert.
-        enabled: true,
-        monthlyCostThreshold: 200,
-      },
-      anomaly: {
-        // Alerts if the cost spiked by 20% or more
-        enabled: true,
-        anomalyPercentageThreshold: 20,
-      },
-    },
-  },
-}
-```
-
-The mixin has all components enabled by default and all the dashboards are generated in the `dashboards_out` directory. You can import them into Grafana.
-
-## Alerts
-
-The mixin follows the [monitoring-mixins guidelines](https://github.com/monitoring-mixins/docs#guidelines-for-alert-names-labels-and-annotations) for alerts.
+Read: [Loki Remote Write](https://grafana.com/docs/loki/latest/alert/#remote-write)
