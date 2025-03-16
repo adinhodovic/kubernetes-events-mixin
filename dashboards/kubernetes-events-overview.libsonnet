@@ -150,7 +150,8 @@ local pcLegend = pcOptions.legend;
       ) +
       tbStandardOptions.withUnit('short') +
       tbOptions.withSortBy(
-        tbOptions.sortBy.withDisplayName('Node Pool')
+        tbOptions.sortBy.withDisplayName('Value') +
+        tbOptions.sortBy.withDesc(true)
       ) +
       tbOptions.footer.withEnablePagination(true) +
       tbQueryOptions.withTargets(
@@ -206,7 +207,8 @@ local pcLegend = pcOptions.legend;
       ) +
       tbStandardOptions.withUnit('short') +
       tbOptions.withSortBy(
-        tbOptions.sortBy.withDisplayName('Node Pool')
+        tbOptions.sortBy.withDisplayName('Value') +
+        tbOptions.sortBy.withDesc(true)
       ) +
       tbOptions.footer.withEnablePagination(true) +
       tbQueryOptions.withTargets(
@@ -261,7 +263,7 @@ local pcLegend = pcOptions.legend;
 
     local eventsCountByType24hPieChartPanel =
       pieChartPanel.new(
-        'Nodes by Node Pool'
+        'Events by Type[24h]'
       ) +
       pcQueryOptions.withTargets(
         prometheus.new(
