@@ -1,8 +1,12 @@
 # Prometheus and Loki Monitoring Mixin for Kubernetes Events
 
-A set of Grafana dashboards and Loki rules for Kubernetes Events.
+A set of Grafana dashboards and Loki rules for Kubernetes Events. It requires Loki and Alloy
 
-## How to use
+## Configuring Loki and Alloy
+
+The following [blog post gives an example on how to configure Loki and Alloy to work with this mixin](https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/).
+
+## How to use the mixin
 
 This mixin is designed to be vendored into the repo with your infrastructure config.
 To do this, use [jsonnet-bundler](https://github.com/jsonnet-bundler/jsonnet-bundler):
