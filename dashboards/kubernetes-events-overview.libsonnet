@@ -37,77 +37,43 @@ local pcOverride = pcStandardOptions.override;
 {
   grafanaDashboards+:: {
 
-    local prometheusDatasourceVariable =
+    local datasourceVariable =
       datasource.new(
-        'prometheus_datasource',
+        'datasource',
         'prometheus',
       ) +
-      datasource.generalOptions.withLabel('Prometheus data source'),
-
-    local lokiDatasourceVariable =
-      datasource.new(
-        'loki_datasource',
-        'loki',
-      ) +
-      datasource.generalOptions.withLabel('Loki data source'),
-
-    local jobVariable =
-      query.new(
-        'job',
-      ) +
-      query.queryTypes.withLabelValues('job') +
-      query.withRegex('.*events.*') +
-      query.withDatasourceFromVariable(lokiDatasourceVariable) +
-      query.withSort(1) +
-      query.generalOptions.withLabel('Job') +
-      query.refresh.onTime(),
+      datasource.generalOptions.withLabel('Data source'),
 
     local kindVariable =
       query.new(
         'kind',
+        'label_values(namespace_kind_type:kubernetes_events:count1m{}, k8s_resource_kind)' % $._config,
       ) +
-      query.withDatasourceFromVariable(lokiDatasourceVariable) +
+      query.withDatasourceFromVariable(datasourceVariable) +
       query.withSort(1) +
       query.generalOptions.withLabel('Kind') +
       query.refresh.onLoad() +
-      query.refresh.onTime() +
-      // TODO(adinhodovic): Replace this with the grafonnet lib
-      {
-        query: {
-          label: 'k8s_resource_kind',
-          stream: '{job=~"$job"}',
-          type: '1',
-        },
-      },
+      query.refresh.onTime(),
 
     local namespaceVariable =
       query.new(
         'namespace',
+        'label_values(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind"}, k8s_namespace_name)' % $._config,
       ) +
-      query.withDatasourceFromVariable(lokiDatasourceVariable) +
+      query.withDatasourceFromVariable(datasourceVariable) +
       query.withSort(1) +
       query.generalOptions.withLabel('Namespace') +
       query.refresh.onLoad() +
-      query.refresh.onTime() +
-      // TODO(adinhodovic): Replace this with the grafonnet lib
-      {
-        query: {
-          label: 'k8s_namespace_name',
-          stream: '{job=~"$job", k8s_resource_kind="$kind"}',
-          type: '1',
-        },
-      },
+      query.refresh.onTime(),
 
     local variables = [
-      prometheusDatasourceVariable,
-      lokiDatasourceVariable,
-      jobVariable,
+      datasourceVariable,
       kindVariable,
       namespaceVariable,
     ],
 
     local eventsCountSumQuery = |||
-      sum(namespace_kind_type:kubernetes_events:count1m) by (k8s_resource_kind, k8s_namespace_name, type)
+      sum(namespace_kind_type:kubernetes_events:count1m{}) by (k8s_resource_kind, k8s_namespace_name, type)
     ||| % $._config,
 
     local eventCountSumTimeSeriesPanel =
@@ -118,7 +84,7 @@ local pcOverride = pcStandardOptions.override;
       tsQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountSumQuery,
           ) +
           prometheus.withLegendFormat(
@@ -157,7 +123,7 @@ local pcOverride = pcStandardOptions.override;
       tbQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountNormalSumQuery,
           ) +
           prometheus.withInstant(true) +
@@ -180,7 +146,6 @@ local pcOverride = pcStandardOptions.override;
             },
             excludeByName: {
               Time: true,
-              job: true,
             },
           }
         ),
@@ -215,7 +180,7 @@ local pcOverride = pcStandardOptions.override;
       tbQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountWarningSumQuery,
           ) +
           prometheus.withInstant(true) +
@@ -238,7 +203,6 @@ local pcOverride = pcStandardOptions.override;
             },
             excludeByName: {
               Time: true,
-              job: true,
             },
           }
         ),
@@ -269,7 +233,7 @@ local pcOverride = pcStandardOptions.override;
       pieChartPanel.panelOptions.withDescription('Events by Type[1w]') +
       pcQueryOptions.withTargets(
         prometheus.new(
-          '$prometheus_datasource',
+          '$datasource',
           eventsCountByType1wQuery,
         ) +
         prometheus.withLegendFormat('{{ type }}') +
@@ -306,7 +270,7 @@ local pcOverride = pcStandardOptions.override;
       tsQueryOptions.withTargets(
         [
           prometheus.new(
-            '$prometheus_datasource',
+            '$datasource',
             eventsCountByTypeQuery,
           ) +
           prometheus.withLegendFormat(
@@ -329,7 +293,7 @@ local pcOverride = pcStandardOptions.override;
 
     local summaryRow =
       row.new(
-        title='Summary',
+        title='Summary All Events',
       ),
 
     local eventsKindSummaryRow =
