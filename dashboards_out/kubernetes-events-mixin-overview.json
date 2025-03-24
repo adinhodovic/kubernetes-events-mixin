@@ -25,7 +25,7 @@
             "y": 0
          },
          "id": 1,
-         "title": "Summary",
+         "title": "Summary All Events",
          "type": "row"
       },
       {
@@ -76,9 +76,9 @@
             {
                "datasource": {
                   "type": "prometheus",
-                  "uid": "$prometheus_datasource"
+                  "uid": "$datasource"
                },
-               "expr": "sum(namespace_kind_type:kubernetes_events:count1m) by (k8s_resource_kind, k8s_namespace_name, type)\n",
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{}) by (k8s_resource_kind, k8s_namespace_name, type)\n",
                "legendFormat": "{{k8s_resource_kind}} / {{k8s_namespace_name}} / {{type}}"
             }
          ],
@@ -140,7 +140,7 @@
             {
                "datasource": {
                   "type": "prometheus",
-                  "uid": "$prometheus_datasource"
+                  "uid": "$datasource"
                },
                "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Normal\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
@@ -153,8 +153,7 @@
                "id": "organize",
                "options": {
                   "excludeByName": {
-                     "Time": true,
-                     "job": true
+                     "Time": true
                   },
                   "indexByName": {
                      "k8s_namespace_name": 1,
@@ -224,7 +223,7 @@
             {
                "datasource": {
                   "type": "prometheus",
-                  "uid": "$prometheus_datasource"
+                  "uid": "$datasource"
                },
                "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Warning\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
@@ -237,8 +236,7 @@
                "id": "organize",
                "options": {
                   "excludeByName": {
-                     "Time": true,
-                     "job": true
+                     "Time": true
                   },
                   "indexByName": {
                      "k8s_namespace_name": 1,
@@ -330,7 +328,7 @@
             {
                "datasource": {
                   "type": "prometheus",
-                  "uid": "$prometheus_datasource"
+                  "uid": "$datasource"
                },
                "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}[1w])) by (type)\n",
                "instant": true,
@@ -388,7 +386,7 @@
             {
                "datasource": {
                   "type": "prometheus",
-                  "uid": "$prometheus_datasource"
+                  "uid": "$datasource"
                },
                "expr": "sum(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}) by ( type)\n",
                "legendFormat": "{{type}}"
@@ -407,58 +405,31 @@
    "templating": {
       "list": [
          {
-            "label": "Prometheus data source",
-            "name": "prometheus_datasource",
+            "label": "Data source",
+            "name": "datasource",
             "query": "prometheus",
             "type": "datasource"
          },
          {
-            "label": "Loki data source",
-            "name": "loki_datasource",
-            "query": "loki",
-            "type": "datasource"
-         },
-         {
             "datasource": {
-               "type": "loki",
-               "uid": "${loki_datasource}"
-            },
-            "label": "Job",
-            "name": "job",
-            "query": "label_values(job)",
-            "refresh": 2,
-            "regex": ".*events.*",
-            "sort": 1,
-            "type": "query"
-         },
-         {
-            "datasource": {
-               "type": "loki",
-               "uid": "${loki_datasource}"
+               "type": "prometheus",
+               "uid": "${datasource}"
             },
             "label": "Kind",
             "name": "kind",
-            "query": {
-               "label": "k8s_resource_kind",
-               "stream": "{job=~\"$job\"}",
-               "type": "1"
-            },
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{}, k8s_resource_kind)",
             "refresh": 2,
             "sort": 1,
             "type": "query"
          },
          {
             "datasource": {
-               "type": "loki",
-               "uid": "${loki_datasource}"
+               "type": "prometheus",
+               "uid": "${datasource}"
             },
             "label": "Namespace",
             "name": "namespace",
-            "query": {
-               "label": "k8s_namespace_name",
-               "stream": "{job=~\"$job\", k8s_resource_kind=\"$kind\"}",
-               "type": "1"
-            },
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\"}, k8s_namespace_name)",
             "refresh": 2,
             "sort": 1,
             "type": "query"
