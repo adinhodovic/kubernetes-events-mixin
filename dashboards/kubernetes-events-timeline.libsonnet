@@ -13,6 +13,7 @@ local slStandardOptions = stateTimelinePanel.standardOptions;
 local slQueryOptions = stateTimelinePanel.queryOptions;
 
 {
+  local dashboardName = 'kubernetes-events-timeline',
   grafanaDashboards+:: {
 
     local lokiVariables = util.variables($._config { datasourceType: 'loki' }),
@@ -80,13 +81,14 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
         title='Events Logs ($kind / $namespace / $name - name)',
       ),
 
-    'kubernetes-events-mixin-timeline.json':
-      $._config.bypassDashboardValidation +
+    ['%s.json' % dashboardName]:
+
+      mixinUtils.dashboards.bypassDashboardValidation +
       dashboard.new(
         'Kubernetes / Events / Timeline',
       ) +
       dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/') +
-      dashboard.withUid($._config.dashboardIds['kubernetes-events-timeline']) +
+      dashboard.withUid($._config.dashboardIds[dashboardName]) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
       dashboard.withEditable(true) +
@@ -121,9 +123,6 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
           stateTimelinePanel.gridPos.withW(24) +
           stateTimelinePanel.gridPos.withH(8),
         ]
-      ) +
-      if $._config.annotation.enabled then
-        dashboard.withAnnotations($._config.customAnnotation)
-      else {},
+      ),
   },
 }

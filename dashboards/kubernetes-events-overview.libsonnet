@@ -21,6 +21,7 @@ local pcStandardOptions = pieChartPanel.standardOptions;
 local pcOverride = pcStandardOptions.override;
 
 {
+  local dashboardName = 'kubernetes-events-overview',
   grafanaDashboards+:: {
 
     local defaultVariables = util.variables($._config),
@@ -180,13 +181,14 @@ local pcOverride = pcStandardOptions.override;
         title='Kind Summary ($kind / $namespace)',
       ),
 
-    'kubernetes-events-mixin-overview.json':
-      $._config.bypassDashboardValidation +
+    ['%s.json' % dashboardName]:
+
+      mixinUtils.dashboards.bypassDashboardValidation +
       dashboard.new(
         'Kubernetes / Events / Overview',
       ) +
       dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a overview for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/') +
-      dashboard.withUid($._config.dashboardIds['kubernetes-events-overview']) +
+      dashboard.withUid($._config.dashboardIds[dashboardName]) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
       dashboard.withEditable(true) +
@@ -242,9 +244,6 @@ local pcOverride = pcStandardOptions.override;
           timeSeriesPanel.gridPos.withW(18) +
           timeSeriesPanel.gridPos.withH(6),
         ]
-      ) +
-      if $._config.annotation.enabled then
-        dashboard.withAnnotations($._config.customAnnotation)
-      else {},
+      ),
   },
 }
