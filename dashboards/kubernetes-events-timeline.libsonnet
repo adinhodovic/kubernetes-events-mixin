@@ -1,111 +1,30 @@
+local mixinUtils = import 'github.com/adinhodovic/mixin-utils/utils.libsonnet';
 local g = import 'github.com/grafana/grafonnet/gen/grafonnet-latest/main.libsonnet';
+local util = import 'util.libsonnet';
 
 local dashboard = g.dashboard;
 local row = g.panel.row;
 
-local variable = dashboard.variable;
-local datasource = variable.datasource;
-local query = variable.query;
-local textbox = variable.textbox;
-local loki = g.query.loki;
-
 local logsPanel = g.panel.logs;
 local stateTimelinePanel = g.panel.stateTimeline;
 
-// Logs
-local lgOptions = logsPanel.options;
-local lgQueryOptions = logsPanel.queryOptions;
-
-// State Timeline
+// State Timeline (for custom configurations not covered by mixinUtils)
 local slStandardOptions = stateTimelinePanel.standardOptions;
 local slQueryOptions = stateTimelinePanel.queryOptions;
 
 {
+  local dashboardName = 'kubernetes-events-timeline',
   grafanaDashboards+:: {
 
-    local datasourceVariable =
-      datasource.new(
-        'datasource',
-        'loki',
-      ) +
-      datasource.generalOptions.withLabel('Data source'),
-
-    local jobVariable =
-      query.new(
-        'job',
-      ) +
-      query.queryTypes.withLabelValues('job') +
-      query.withRegex('.*events.*') +
-      query.withDatasourceFromVariable(datasourceVariable) +
-      query.withSort(1) +
-      query.generalOptions.withLabel('Job') +
-      query.refresh.onTime(),
-
-    local kindVariable =
-      query.new(
-        'kind',
-      ) +
-      query.withDatasourceFromVariable(datasourceVariable) +
-      query.withSort(1) +
-      query.generalOptions.withLabel('Kind') +
-      query.refresh.onLoad() +
-      query.refresh.onTime() +
-      // TODO(adinhodovic): Replace this with the grafonnet lib
-      {
-        query: {
-          label: 'k8s_resource_kind',
-          stream: '{job=~"$job"}',
-          type: '1',
-        },
-      },
-
-    local namespaceVariable =
-      query.new(
-        'namespace',
-      ) +
-      query.withDatasourceFromVariable(datasourceVariable) +
-      query.withSort(1) +
-      query.generalOptions.withLabel('Namespace') +
-      query.refresh.onLoad() +
-      query.refresh.onTime() +
-      // TODO(adinhodovic): Replace this with the grafonnet lib
-      {
-        query: {
-          label: 'k8s_namespace_name',
-          stream: '{job=~"$job", k8s_resource_kind="$kind"}',
-          type: '1',
-        },
-      },
-
-    local nameVariable =
-      // workaround for the name variable
-      variable.query.new(
-        'name'
-      ) +
-      {
-        type: 'textbox',
-      } +
-      textbox.generalOptions.withLabel('Name') +
-      textbox.generalOptions.withDescription('Name of the Kubernetes resource. Use the search, otherwise there is too many unique resources.'),
-
-    local searchVariable =
-      // workaround for the textbox variable
-      variable.query.new(
-        'search'
-      ) +
-      {
-        type: 'textbox',
-      } +
-      textbox.generalOptions.withLabel('Search') +
-      textbox.generalOptions.withDescription('Generic search of the event.'),
+    local lokiVariables = util.variables($._config { datasourceType: 'loki' }),
 
     local variables = [
-      datasourceVariable,
-      jobVariable,
-      kindVariable,
-      namespaceVariable,
-      nameVariable,
-      searchVariable,
+      lokiVariables.datasource,
+      lokiVariables.job,
+      lokiVariables.kind,
+      lokiVariables.namespace,
+      lokiVariables.name,
+      lokiVariables.search,
     ],
 
     local eventsQuery = |||
@@ -113,20 +32,15 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
     |||,
 
     local eventsLogsPanel =
-      logsPanel.new(
+      mixinUtils.dashboards.logsPanel(
         'Events',
-      ) +
-      logsPanel.panelOptions.withDescription('Logs of events for the selected Kubernetes resource. Log line limit is at 100 events.') +
-      lgQueryOptions.withTargets(
-        loki.new(
-          '$datasource',
-          eventsQuery,
-        ) +
-        loki.withMaxLines(100)
-      ) +
-      lgOptions.withShowTime(true) +
-      lgOptions.withWrapLogMessage(true) +
-      lgOptions.withEnableLogDetails(true),
+        eventsQuery,
+        description='Logs of events for the selected Kubernetes resource. Log line limit is at 100 events.',
+        maxLines=100,
+        showTime=true,
+        wrapLogMessage=true,
+        enableLogDetails=true,
+      ),
 
 
     local eventsTimelineQuery = |||
@@ -134,31 +48,22 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
     |||,
 
     local eventsTimelinePanel =
-      stateTimelinePanel.new(
+      mixinUtils.dashboards.stateTimelinePanel(
         'Events Timeline',
-      ) +
-      stateTimelinePanel.panelOptions.withDescription('Timeline of events for the selected Kubernetes resource. Please use the search filter, otherwise there will be too many events. Log line limit is at 50 events.') +
-      slQueryOptions.withTargets(
-        loki.new(
-          '$datasource',
-          eventsTimelineQuery,
-        ) +
-        loki.withMaxLines(50)
-      ) +
-      slQueryOptions.withTransformations(
-        slQueryOptions.transformation.withId('extractFields') +
-        slQueryOptions.transformation.withOptions(
-          {
+        eventsTimelineQuery,
+        description='Timeline of events for the selected Kubernetes resource. Please use the search filter, otherwise there will be too many events. Log line limit is at 50 events.',
+        maxLines=50,
+        transformations=[
+          slQueryOptions.transformation.withId('extractFields') +
+          slQueryOptions.transformation.withOptions({
             delimiter: ',',
             format: 'json',
             keepTime: true,
             replace: true,
             source: 'Line',
-          },
-        )
-      ) +
-      slStandardOptions.withMappings(
-        [
+          }),
+        ],
+        mappings=[
           slStandardOptions.mapping.RegexMap.withType() +
           slStandardOptions.mapping.RegexMap.options.withPattern('.*Normal.*') +
           slStandardOptions.mapping.RegexMap.options.result.withColor('green') +
@@ -167,30 +72,23 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
           slStandardOptions.mapping.RegexMap.options.withPattern('.*Warning.*') +
           slStandardOptions.mapping.RegexMap.options.result.withColor('orange') +
           slStandardOptions.mapping.RegexMap.options.result.withIndex(1),
-        ]
-      ) +
-      {
-        fieldConfig+: {
-          defaults+: {
-            custom+: {
-              insertNulls: 300000,
-            },
-          },
-        },
-      },
+        ],
+        insertNulls=300000,
+      ),
 
     local eventsSummaryRow =
       row.new(
         title='Events Logs ($kind / $namespace / $name - name)',
       ),
 
-    'kubernetes-events-mixin-timeline.json':
-      $._config.bypassDashboardValidation +
+    ['%s.json' % dashboardName]:
+
+      mixinUtils.dashboards.bypassDashboardValidation +
       dashboard.new(
         'Kubernetes / Events / Timeline',
       ) +
       dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/') +
-      dashboard.withUid($._config.kubernetesEventsTimelineDashboardUid) +
+      dashboard.withUid($._config.dashboardIds[dashboardName]) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
       dashboard.withEditable(true) +
@@ -225,9 +123,6 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
           stateTimelinePanel.gridPos.withW(24) +
           stateTimelinePanel.gridPos.withH(8),
         ]
-      ) +
-      if $._config.annotation.enabled then
-        dashboard.withAnnotations($._config.customAnnotation)
-      else {},
+      ),
   },
 }
