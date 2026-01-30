@@ -80,7 +80,7 @@ local pcOverride = pcStandardOptions.override;
               tbPanelOptions.link.withTitle('Go To Timeline') +
               tbPanelOptions.link.withType('dashboard') +
               tbPanelOptions.link.withUrl(
-                '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.kubernetesEventsTimelineDashboardUid
+                '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
               ) +
               tbPanelOptions.link.withTargetBlank(true)
             )
@@ -120,7 +120,7 @@ local pcOverride = pcStandardOptions.override;
               tbPanelOptions.link.withTitle('Go To Timeline') +
               tbPanelOptions.link.withType('dashboard') +
               tbPanelOptions.link.withUrl(
-                '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.kubernetesEventsTimelineDashboardUid
+                '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
               ) +
               tbPanelOptions.link.withTargetBlank(true)
             )
@@ -186,7 +186,7 @@ local pcOverride = pcStandardOptions.override;
         'Kubernetes / Events / Overview',
       ) +
       dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a overview for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/') +
-      dashboard.withUid($._config.kubernetesEventsOverviewDashboardUid) +
+      dashboard.withUid($._config.dashboardIds['kubernetes-events-overview']) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
       dashboard.withEditable(true) +

@@ -3,6 +3,8 @@ local annotation = g.dashboard.annotation;
 
 {
   _config+:: {
+    local this = self,
+
     // Bypasses grafana.com/dashboards validator
     bypassDashboardValidation: {
       __inputs: [],
@@ -19,8 +21,14 @@ local annotation = g.dashboard.annotation;
 
     grafanaUrl: 'https://grafana.com',
 
-    kubernetesEventsOverviewDashboardUid: 'kubernetes-events-mixin-over-jkwq',
-    kubernetesEventsTimelineDashboardUid: 'kubernetes-events-mixin-timeline-jkwq',
+    dashboardIds: {
+      'kubernetes-events-overview': 'kubernetes-events-mixin-over-jkwq',
+      'kubernetes-events-timeline': 'kubernetes-events-mixin-timeline-jkwq',
+    },
+    dashboardUrls: {
+      'kubernetes-events-overview': '%s/d/%s/kubernetes-events-overview' % [this.grafanaUrl, this.dashboardIds['kubernetes-events-overview']],
+      'kubernetes-events-timeline': '%s/d/%s/kubernetes-events-timeline' % [this.grafanaUrl, this.dashboardIds['kubernetes-events-timeline']],
+    },
 
     tags: ['kubernetes', 'kubernetes-events', 'kubernetes-events-mixin'],
 

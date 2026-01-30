@@ -86,7 +86,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
         'Kubernetes / Events / Timeline',
       ) +
       dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/') +
-      dashboard.withUid($._config.kubernetesEventsTimelineDashboardUid) +
+      dashboard.withUid($._config.dashboardIds['kubernetes-events-timeline']) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
       dashboard.withEditable(true) +
