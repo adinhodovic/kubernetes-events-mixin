@@ -11,6 +11,12 @@ local annotation = g.dashboard.annotation;
 
     kubernetesEventsSelector: 'job="loki.source.kubernetes_events"',
 
+    // Default datasource name
+    datasourceName: 'default',
+
+    // Datasource type for variables (prometheus or loki)
+    datasourceType: 'prometheus',
+
     grafanaUrl: 'https://grafana.com',
 
     kubernetesEventsOverviewDashboardUid: 'kubernetes-events-mixin-over-jkwq',
