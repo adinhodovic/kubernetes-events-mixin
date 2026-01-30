@@ -114,14 +114,14 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
           logsPanel.gridPos.withX(0) +
           logsPanel.gridPos.withY(1) +
           logsPanel.gridPos.withW(24) +
-          logsPanel.gridPos.withH(8),
+          logsPanel.gridPos.withH(10),
         ] +
         [
           eventsTimelinePanel +
           stateTimelinePanel.gridPos.withX(0) +
           stateTimelinePanel.gridPos.withY(9) +
           stateTimelinePanel.gridPos.withW(24) +
-          stateTimelinePanel.gridPos.withH(8),
+          stateTimelinePanel.gridPos.withH(12),
         ]
       ),
   },

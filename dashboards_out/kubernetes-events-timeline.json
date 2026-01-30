@@ -35,7 +35,7 @@
          },
          "description": "Logs of events for the selected Kubernetes resource. Log line limit is at 100 events.",
          "gridPos": {
-            "h": 8,
+            "h": 10,
             "w": 24,
             "x": 0,
             "y": 1
@@ -97,7 +97,7 @@
             "overrides": [ ]
          },
          "gridPos": {
-            "h": 8,
+            "h": 12,
             "w": 24,
             "x": 0,
             "y": 9
