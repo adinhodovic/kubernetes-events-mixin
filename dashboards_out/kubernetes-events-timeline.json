@@ -111,7 +111,7 @@
                   "uid": "$datasource"
                },
                "expr": "{job=\"$job\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format `{\"{{ .kind }} / {{ .name }}\": \"Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace \"\\\"\" \"'\" }}\"}`\n",
-               "maxLines": 50
+               "maxLines": 100
             }
          ],
          "title": "Events Timeline",

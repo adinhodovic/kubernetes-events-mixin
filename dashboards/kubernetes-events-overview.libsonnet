@@ -23,165 +23,207 @@ local pcOverride = pcStandardOptions.override;
 {
   local dashboardName = 'kubernetes-events-overview',
   grafanaDashboards+:: {
-
-    local defaultVariables = util.variables($._config),
-
-    local variables = [
-      defaultVariables.datasource,
-      defaultVariables.kind,
-      defaultVariables.namespace,
-    ],
-
-    local eventsCountSumQuery = |||
-      sum(namespace_kind_type:kubernetes_events:count1m{}) by (k8s_resource_kind, k8s_namespace_name, type)
-    ||| % $._config,
-
-    local eventCountSumTimeSeriesPanel =
-      mixinUtils.dashboards.timeSeriesPanel(
-        'Events',
-        'short',
-        eventsCountSumQuery,
-        '{{k8s_resource_kind}} / {{k8s_namespace_name}} / {{type}}',
-        calcs=['lastNotNull', 'mean', 'max'],
-        stack='normal',
-        description='Total Event Emissions by Kind and Namespace[1w]',
-      ),
-
-    local eventsCountNormalSumQuery = |||
-      topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type="Normal"}[1w])) by (k8s_resource_kind, k8s_namespace_name))
-    ||| % $._config,
-
-    local eventsCountNormalSumTable =
-      mixinUtils.dashboards.tablePanel(
-        'Top 10 Normal Event Emissions by Kind and Namespace[1w]',
-        'short',
-        eventsCountNormalSumQuery,
-        description='Top 10 Normal Event Emissions by Kind and Namespace[1w]',
-        sortBy={ name: 'Value', desc: true },
-        transformations=[
-          tbQueryOptions.transformation.withId('organize') +
-          tbQueryOptions.transformation.withOptions({
-            renameByName: {
-              k8s_resource_kind: 'Kind',
-              k8s_namespace_name: 'Namespace',
-            },
-            indexByName: {
-              k8s_resource_kind: 0,
-              k8s_namespace_name: 1,
-            },
-            excludeByName: {
-              Time: true,
-            },
-          }),
-        ],
-        overrides=[
-          tbOverride.byName.new('Kind') +
-          tbOverride.byName.withPropertiesFromOptions(
-            tbStandardOptions.withLinks(
-              tbPanelOptions.link.withTitle('Go To Timeline') +
-              tbPanelOptions.link.withType('dashboard') +
-              tbPanelOptions.link.withUrl(
-                '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
-              ) +
-              tbPanelOptions.link.withTargetBlank(true)
-            )
-          ),
-        ]
-      ),
-
-    local eventsCountWarningSumQuery = std.strReplace(eventsCountNormalSumQuery, 'Normal', 'Warning'),
-
-    local eventsCountWarningSumTable =
-      mixinUtils.dashboards.tablePanel(
-        'Top 10 Warning Event Emissions by Kind and Namespace[1w]',
-        'short',
-        eventsCountWarningSumQuery,
-        description='Top 10 Warning Event Emissions by Kind and Namespace[1w]',
-        sortBy={ name: 'Value', desc: true },
-        transformations=[
-          tbQueryOptions.transformation.withId('organize') +
-          tbQueryOptions.transformation.withOptions({
-            renameByName: {
-              k8s_resource_kind: 'Kind',
-              k8s_namespace_name: 'Namespace',
-            },
-            indexByName: {
-              k8s_resource_kind: 0,
-              k8s_namespace_name: 1,
-            },
-            excludeByName: {
-              Time: true,
-            },
-          }),
-        ],
-        overrides=[
-          tbOverride.byName.new('Kind') +
-          tbOverride.byName.withPropertiesFromOptions(
-            tbStandardOptions.withLinks(
-              tbPanelOptions.link.withTitle('Go To Timeline') +
-              tbPanelOptions.link.withType('dashboard') +
-              tbPanelOptions.link.withUrl(
-                '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
-              ) +
-              tbPanelOptions.link.withTargetBlank(true)
-            )
-          ),
-        ]
-      ),
-
-    local eventsCountByType1wQuery = |||
-      sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[1w])) by (type)
-    |||,
-
-    local eventsCountByType1wPieChartPanel =
-      mixinUtils.dashboards.pieChartPanel(
-        'Events by Type[1w]',
-        'short',
-        eventsCountByType1wQuery,
-        '{{ type }}',
-        description='Events by Type[1w]',
-        labels=['value', 'percent'],
-        values=['value', 'percent'],
-        overrides=[
-          pcOverride.byName.new('Normal') +
-          pcOverride.byName.withPropertiesFromOptions(
-            pcStandardOptions.color.withMode('fixed') +
-            pcStandardOptions.color.withFixedColor('green')
-          ),
-          pcOverride.byName.new('Warning') +
-          pcOverride.byName.withPropertiesFromOptions(
-            pcStandardOptions.color.withMode('fixed') +
-            pcStandardOptions.color.withFixedColor('yellow')
-          ),
-        ]
-      ),
-
-    local eventsCountByTypeQuery = |||
-      sum(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}) by ( type)
-    ||| % $._config,
-
-    local eventCountByTypeTimeSeriesPanel =
-      mixinUtils.dashboards.timeSeriesPanel(
-        'Events by Type',
-        'short',
-        eventsCountByTypeQuery,
-        '{{type}}',
-        calcs=['lastNotNull', 'mean', 'max'],
-        stack='normal',
-        description='Events by Type',
-      ),
-
-    local summaryRow =
-      row.new(
-        title='Summary All Events',
-      ),
-
-    local eventsKindSummaryRow =
-      row.new(
-        title='Kind Summary ($kind / $namespace)',
-      ),
-
     ['%s.json' % dashboardName]:
+
+      local defaultVariables = util.variables($._config);
+
+      local variables = [
+        defaultVariables.datasource,
+        defaultVariables.kind,
+        defaultVariables.namespace,
+      ];
+
+      local queries = {
+        // Summary - All Events
+        eventsCountSum: |||
+          sum(namespace_kind_type:kubernetes_events:count1m{}) by (k8s_resource_kind, k8s_namespace_name, type)
+        ||| % $._config,
+
+        eventsCountNormalSum: |||
+          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type="Normal"}[1w])) by (k8s_resource_kind, k8s_namespace_name))
+        ||| % $._config,
+
+        eventsCountWarningSum: std.strReplace(self.eventsCountNormalSum, 'Normal', 'Warning'),
+
+        // Kind Summary
+        eventsCountByType1w: |||
+          sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[1w])) by (type)
+        |||,
+
+        eventsCountByType: |||
+          sum(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}) by ( type)
+        ||| % $._config,
+      };
+
+      local panels = {
+        // Summary - All Events
+        eventCountSumTimeSeries:
+          mixinUtils.dashboards.timeSeriesPanel(
+            'Events',
+            'short',
+            queries.eventsCountSum,
+            '{{k8s_resource_kind}} / {{k8s_namespace_name}} / {{type}}',
+            calcs=['lastNotNull', 'mean', 'max'],
+            stack='normal',
+            description='Total Event Emissions by Kind and Namespace[1w]',
+          ),
+
+        eventsCountNormalSumTable:
+          mixinUtils.dashboards.tablePanel(
+            'Top 10 Normal Event Emissions by Kind and Namespace[1w]',
+            'short',
+            queries.eventsCountNormalSum,
+            description='Top 10 Normal Event Emissions by Kind and Namespace[1w]',
+            sortBy={ name: 'Value', desc: true },
+            transformations=[
+              tbQueryOptions.transformation.withId('organize') +
+              tbQueryOptions.transformation.withOptions({
+                renameByName: {
+                  k8s_resource_kind: 'Kind',
+                  k8s_namespace_name: 'Namespace',
+                },
+                indexByName: {
+                  k8s_resource_kind: 0,
+                  k8s_namespace_name: 1,
+                },
+                excludeByName: {
+                  Time: true,
+                },
+              }),
+            ],
+            overrides=[
+              tbOverride.byName.new('Kind') +
+              tbOverride.byName.withPropertiesFromOptions(
+                tbStandardOptions.withLinks(
+                  tbPanelOptions.link.withTitle('Go To Timeline') +
+                  tbPanelOptions.link.withType('dashboard') +
+                  tbPanelOptions.link.withUrl(
+                    '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
+                  ) +
+                  tbPanelOptions.link.withTargetBlank(true)
+                )
+              ),
+            ]
+          ),
+
+        eventsCountWarningSumTable:
+          mixinUtils.dashboards.tablePanel(
+            'Top 10 Warning Event Emissions by Kind and Namespace[1w]',
+            'short',
+            queries.eventsCountWarningSum,
+            description='Top 10 Warning Event Emissions by Kind and Namespace[1w]',
+            sortBy={ name: 'Value', desc: true },
+            transformations=[
+              tbQueryOptions.transformation.withId('organize') +
+              tbQueryOptions.transformation.withOptions({
+                renameByName: {
+                  k8s_resource_kind: 'Kind',
+                  k8s_namespace_name: 'Namespace',
+                },
+                indexByName: {
+                  k8s_resource_kind: 0,
+                  k8s_namespace_name: 1,
+                },
+                excludeByName: {
+                  Time: true,
+                },
+              }),
+            ],
+            overrides=[
+              tbOverride.byName.new('Kind') +
+              tbOverride.byName.withPropertiesFromOptions(
+                tbStandardOptions.withLinks(
+                  tbPanelOptions.link.withTitle('Go To Timeline') +
+                  tbPanelOptions.link.withType('dashboard') +
+                  tbPanelOptions.link.withUrl(
+                    '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
+                  ) +
+                  tbPanelOptions.link.withTargetBlank(true)
+                )
+              ),
+            ]
+          ),
+
+        // Kind Summary
+        eventsCountByType1wPieChart:
+          mixinUtils.dashboards.pieChartPanel(
+            'Events by Type[1w]',
+            'short',
+            queries.eventsCountByType1w,
+            '{{ type }}',
+            description='Events by Type[1w]',
+            labels=['value', 'percent'],
+            values=['value', 'percent'],
+            overrides=[
+              pcOverride.byName.new('Normal') +
+              pcOverride.byName.withPropertiesFromOptions(
+                pcStandardOptions.color.withMode('fixed') +
+                pcStandardOptions.color.withFixedColor('green')
+              ),
+              pcOverride.byName.new('Warning') +
+              pcOverride.byName.withPropertiesFromOptions(
+                pcStandardOptions.color.withMode('fixed') +
+                pcStandardOptions.color.withFixedColor('yellow')
+              ),
+            ]
+          ),
+
+        eventCountByTypeTimeSeries:
+          mixinUtils.dashboards.timeSeriesPanel(
+            'Events by Type',
+            'short',
+            queries.eventsCountByType,
+            '{{type}}',
+            calcs=['lastNotNull', 'mean', 'max'],
+            stack='normal',
+            description='Events by Type',
+          ),
+      };
+
+      local rows =
+        [
+          row.new('Summary All Events') +
+          row.gridPos.withX(0) +
+          row.gridPos.withY(0) +
+          row.gridPos.withW(24) +
+          row.gridPos.withH(1),
+        ] +
+        [
+          panels.eventCountSumTimeSeries +
+          timeSeriesPanel.gridPos.withX(0) +
+          timeSeriesPanel.gridPos.withY(1) +
+          timeSeriesPanel.gridPos.withW(24) +
+          timeSeriesPanel.gridPos.withH(6),
+        ] +
+        grid.makeGrid(
+          [
+            panels.eventsCountNormalSumTable,
+            panels.eventsCountWarningSumTable,
+          ],
+          panelWidth=12,
+          panelHeight=8,
+          startY=7
+        ) +
+        [
+          row.new('Kind Summary ($kind / $namespace)') +
+          row.gridPos.withX(0) +
+          row.gridPos.withY(15) +
+          row.gridPos.withW(24) +
+          row.gridPos.withH(1),
+        ] +
+        [
+          panels.eventsCountByType1wPieChart +
+          pieChartPanel.gridPos.withX(0) +
+          pieChartPanel.gridPos.withY(16) +
+          pieChartPanel.gridPos.withW(6) +
+          pieChartPanel.gridPos.withH(6),
+          panels.eventCountByTypeTimeSeries +
+          timeSeriesPanel.gridPos.withX(6) +
+          timeSeriesPanel.gridPos.withY(16) +
+          timeSeriesPanel.gridPos.withW(18) +
+          timeSeriesPanel.gridPos.withH(6),
+        ];
+
 
       mixinUtils.dashboards.bypassDashboardValidation +
       dashboard.new(
@@ -202,48 +244,7 @@ local pcOverride = pcStandardOptions.override;
         ]
       ) +
       dashboard.withPanels(
-        [
-          summaryRow +
-          row.gridPos.withX(0) +
-          row.gridPos.withY(0) +
-          row.gridPos.withW(24) +
-          row.gridPos.withH(1),
-        ] +
-        [
-          eventCountSumTimeSeriesPanel +
-          timeSeriesPanel.gridPos.withX(0) +
-          timeSeriesPanel.gridPos.withY(1) +
-          timeSeriesPanel.gridPos.withW(24) +
-          timeSeriesPanel.gridPos.withH(6),
-        ] +
-        grid.makeGrid(
-          [
-            eventsCountNormalSumTable,
-            eventsCountWarningSumTable,
-          ],
-          panelWidth=12,
-          panelHeight=8,
-          startY=7
-        ) +
-        [
-          eventsKindSummaryRow +
-          row.gridPos.withX(0) +
-          row.gridPos.withY(15) +
-          row.gridPos.withW(24) +
-          row.gridPos.withH(1),
-        ] +
-        [
-          eventsCountByType1wPieChartPanel +
-          pieChartPanel.gridPos.withX(0) +
-          pieChartPanel.gridPos.withY(16) +
-          pieChartPanel.gridPos.withW(6) +
-          pieChartPanel.gridPos.withH(6),
-          eventCountByTypeTimeSeriesPanel +
-          timeSeriesPanel.gridPos.withX(6) +
-          timeSeriesPanel.gridPos.withY(16) +
-          timeSeriesPanel.gridPos.withW(18) +
-          timeSeriesPanel.gridPos.withH(6),
-        ]
+        rows
       ),
   },
 }
