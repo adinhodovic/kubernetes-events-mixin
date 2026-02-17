@@ -33,7 +33,7 @@
             "type": "loki",
             "uid": "$datasource"
          },
-         "description": "Logs of events for the selected Kubernetes resource. Log line limit is at 100 events.",
+         "description": "Logs of events for the selected Kubernetes resource. Log line limit is at 200 events.",
          "gridPos": {
             "h": 10,
             "w": 24,
@@ -54,7 +54,7 @@
                   "uid": "$datasource"
                },
                "expr": "{job=~\"$job\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
-               "maxLines": 100
+               "maxLines": 200
             }
          ],
          "title": "Events",
@@ -65,7 +65,7 @@
             "type": "loki",
             "uid": "$datasource"
          },
-         "description": "Timeline of events for the selected Kubernetes resource. Please use the search filter, otherwise there will be too many events. Log line limit is at 50 events.",
+         "description": "Timeline of events for the selected Kubernetes resource. Please use the search filter, otherwise there will be too many events. Log line limit is at 100 events.",
          "fieldConfig": {
             "defaults": {
                "custom": {

@@ -43,8 +43,8 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
           mixinUtils.dashboards.logsPanel(
             'Events',
             queries.events,
-            description='Logs of events for the selected Kubernetes resource. Log line limit is at 100 events.',
-            maxLines=100,
+            description='Logs of events for the selected Kubernetes resource. Log line limit is at %d events.' % $._config.dashboardPanels.maxLinesEventsLogs,
+            maxLines=$._config.dashboardPanels.maxLinesEventsLogs,
             showTime=true,
             wrapLogMessage=true,
             enableLogDetails=true,
@@ -54,8 +54,8 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
           mixinUtils.dashboards.stateTimelinePanel(
             'Events Timeline',
             queries.eventsTimeline,
-            description='Timeline of events for the selected Kubernetes resource. Please use the search filter, otherwise there will be too many events. Log line limit is at 50 events.',
-            maxLines=100,
+            description='Timeline of events for the selected Kubernetes resource. Please use the search filter, otherwise there will be too many events. Log line limit is at %d events.' % $._config.dashboardPanels.maxLinesEventsTimeline,
+            maxLines=$._config.dashboardPanels.maxLinesEventsTimeline,
             transformations=[
               slQueryOptions.transformation.withId('extractFields') +
               slQueryOptions.transformation.withOptions({
