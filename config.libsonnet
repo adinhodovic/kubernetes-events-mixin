@@ -12,6 +12,14 @@
 
     grafanaUrl: 'https://grafana.com',
 
+    // Dashboard panel configuration
+    dashboardPanels: {
+      // Maximum number of log lines to display in the events logs panel
+      maxLinesEventsLogs: 200,
+      // Maximum number of log lines to display in the events timeline panel
+      maxLinesEventsTimeline: 100,
+    },
+
     dashboardIds: {
       'kubernetes-events-overview': 'kubernetes-events-mixin-over-jkwq',
       'kubernetes-events-timeline': 'kubernetes-events-mixin-timeline-jkwq',
