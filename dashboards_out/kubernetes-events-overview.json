@@ -5,17 +5,14 @@
    "editable": true,
    "links": [
       {
-         "includeVars": true,
          "tags": [
             "kubernetes",
             "kubernetes-events",
             "kubernetes-events-mixin"
          ],
+         "targetBlank": true,
          "title": "Kubernetes Events",
          "type": "dashboards"
-      },
-      {
-         "targetBlank": true
       }
    ],
    "panels": [
