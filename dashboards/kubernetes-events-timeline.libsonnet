@@ -19,23 +19,27 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local lokiVariables = util.variables($._config { datasourceType: 'loki' });
 
-      local variables = [
-        lokiVariables.datasource,
-        lokiVariables.job,
-        lokiVariables.kind,
-        lokiVariables.namespace,
-        lokiVariables.name,
-        lokiVariables.search,
-      ];
+      local variables =
+        [
+          lokiVariables.datasource,
+        ] +
+        (if std.get($._config, 'showMultiCluster', false) then [lokiVariables.cluster] else []) +
+        [
+          lokiVariables.job,
+          lokiVariables.kind,
+          lokiVariables.namespace,
+          lokiVariables.name,
+          lokiVariables.search,
+        ];
 
       local queries = {
         events: |||
-          {job=~"$job", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
-        |||,
+          {job=~"$job", %(clusterLabel)s=~"$cluster", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
+        ||| % $._config,
 
         eventsTimeline: |||
-          {job="$job", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format `{"{{ .kind }} / {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
-        |||,
+          {job="$job", %(clusterLabel)s=~"$cluster", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format `{"{{ .kind }} / {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
+        ||| % $._config,
       };
 
       local panels = {
@@ -82,7 +86,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local rows =
         [
-          row.new('Events Logs ($kind / $namespace / $name - name)') +
+          row.new('Events Logs ($cluster / $kind / $namespace / $name - name)') +
           row.gridPos.withX(0) +
           row.gridPos.withY(0) +
           row.gridPos.withW(24) +

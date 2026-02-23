@@ -27,31 +27,35 @@ local pcOverride = pcStandardOptions.override;
 
       local defaultVariables = util.variables($._config);
 
-      local variables = [
-        defaultVariables.datasource,
-        defaultVariables.kind,
-        defaultVariables.namespace,
-      ];
+      local variables =
+        [
+          defaultVariables.datasource,
+        ] +
+        (if std.get($._config, 'showMultiCluster', false) then [defaultVariables.cluster] else []) +
+        [
+          defaultVariables.kind,
+          defaultVariables.namespace,
+        ];
 
       local queries = {
         // Summary - All Events
         eventsCountSum: |||
-          sum(namespace_kind_type:kubernetes_events:count1m{}) by (k8s_resource_kind, k8s_namespace_name, type)
+          sum(namespace_kind_type:kubernetes_events:count1m{%(clusterLabel)s=~"$cluster"}) by (k8s_resource_kind, k8s_namespace_name, type)
         ||| % $._config,
 
         eventsCountNormalSum: |||
-          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type="Normal"}[1w])) by (k8s_resource_kind, k8s_namespace_name))
+          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(clusterLabel)s=~"$cluster", type="Normal"}[1w])) by (k8s_resource_kind, k8s_namespace_name))
         ||| % $._config,
 
         eventsCountWarningSum: std.strReplace(self.eventsCountNormalSum, 'Normal', 'Warning'),
 
         // Kind Summary
         eventsCountByType1w: |||
-          sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[1w])) by (type)
+          sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(clusterLabel)s=~"$cluster", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[1w])) by (type)
         |||,
 
         eventsCountByType: |||
-          sum(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}) by ( type)
+          sum(namespace_kind_type:kubernetes_events:count1m{%(clusterLabel)s=~"$cluster", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}) by ( type)
         ||| % $._config,
       };
 
@@ -98,7 +102,7 @@ local pcOverride = pcStandardOptions.override;
                   tbPanelOptions.link.withTitle('Go To Timeline') +
                   tbPanelOptions.link.withType('dashboard') +
                   tbPanelOptions.link.withUrl(
-                    '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
+                    '/d/%s/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
                   ) +
                   tbPanelOptions.link.withTargetBlank(true)
                 )
@@ -136,7 +140,7 @@ local pcOverride = pcStandardOptions.override;
                   tbPanelOptions.link.withTitle('Go To Timeline') +
                   tbPanelOptions.link.withType('dashboard') +
                   tbPanelOptions.link.withUrl(
-                    '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
+                    '/d/%s/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
                   ) +
                   tbPanelOptions.link.withTargetBlank(true)
                 )

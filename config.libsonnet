@@ -29,6 +29,10 @@
       'kubernetes-events-timeline': '%s/d/%s/kubernetes-events-timeline' % [this.grafanaUrl, this.dashboardIds['kubernetes-events-timeline']],
     },
 
+    // Opt-in to multiCluster dashboards by overriding this and the clusterLabel.
+    showMultiCluster: false,
+    clusterLabel: 'cluster',
+
     tags: ['kubernetes', 'kubernetes-events', 'kubernetes-events-mixin'],
   },
 }

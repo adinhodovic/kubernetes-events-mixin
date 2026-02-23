@@ -5,14 +5,17 @@
    "editable": true,
    "links": [
       {
+         "includeVars": true,
          "tags": [
             "kubernetes",
             "kubernetes-events",
             "kubernetes-events-mixin"
          ],
-         "targetBlank": true,
          "title": "Kubernetes Events",
          "type": "dashboards"
+      },
+      {
+         "targetBlank": true
       }
    ],
    "panels": [
@@ -81,7 +84,7 @@
                   "uid": "$datasource"
                },
                "exemplar": false,
-               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{}) by (k8s_resource_kind, k8s_namespace_name, type)\n",
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\"}) by (k8s_resource_kind, k8s_namespace_name, type)\n",
                "legendFormat": "{{k8s_resource_kind}} / {{k8s_namespace_name}} / {{type}}"
             }
          ],
@@ -116,7 +119,7 @@
                               "targetBlank": true,
                               "title": "Go To Timeline",
                               "type": "dashboard",
-                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
                            }
                         ]
                      }
@@ -149,7 +152,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Normal\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Normal\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
@@ -203,7 +206,7 @@
                               "targetBlank": true,
                               "title": "Go To Timeline",
                               "type": "dashboard",
-                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
                            }
                         ]
                      }
@@ -236,7 +239,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type=\"Warning\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Warning\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
@@ -350,7 +353,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}[1w])) by (type)\n",
+               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(clusterLabel)s=~\"$cluster\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}[1w])) by (type)\n",
                "instant": true,
                "legendFormat": "{{ type }}"
             }
@@ -411,7 +414,7 @@
                   "uid": "$datasource"
                },
                "exemplar": false,
-               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}) by ( type)\n",
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}) by ( type)\n",
                "legendFormat": "{{type}}"
             }
          ],
@@ -445,7 +448,7 @@
             },
             "label": "Kind",
             "name": "kind",
-            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{}, k8s_resource_kind)",
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\"}, k8s_resource_kind)",
             "refresh": 2,
             "sort": 1,
             "type": "query"
@@ -457,7 +460,7 @@
             },
             "label": "Namespace",
             "name": "namespace",
-            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind=\"$kind\"}, k8s_namespace_name)",
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", k8s_resource_kind=\"$kind\"}, k8s_namespace_name)",
             "refresh": 2,
             "sort": 1,
             "type": "query"

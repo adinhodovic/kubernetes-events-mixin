@@ -10,13 +10,15 @@ local textbox = variable.textbox;
 {
   filters(config):: {
     local this = self,
+    cluster:
+      if std.get(config, 'showMultiCluster', false) then
+        '%(clusterLabel)s=~"$cluster"' % { clusterLabel: std.get(config, 'clusterLabel', 'cluster') }
+      else
+        '',
     kind: 'k8s_resource_kind="$kind"',
     namespace: 'k8s_namespace_name="$namespace"',
 
-    default: |||
-      %(kind)s,
-      %(namespace)s
-    ||| % this,
+    default: std.join(',', std.filter(function(x) x != '', [this.cluster, this.kind, this.namespace])),
   },
 
   // Unified variables function that supports both Prometheus and Loki datasources
@@ -25,6 +27,7 @@ local textbox = variable.textbox;
     local this = self,
     local dsType = std.get(config, 'datasourceType', 'prometheus'),
     local isLoki = dsType == 'loki',
+    local clusterLabel = std.get(config, 'clusterLabel', 'cluster'),
 
     datasource:
       datasource.new(
@@ -43,6 +46,41 @@ local textbox = variable.textbox;
           }
         else {}
       ),
+
+    cluster:
+      if isLoki then
+        query.new('cluster') +
+        query.withDatasourceFromVariable(this.datasource) +
+        query.withSort(1) +
+        query.generalOptions.withLabel('Cluster') +
+        query.refresh.onLoad() +
+        query.refresh.onTime() +
+        {
+          multi: true,
+          includeAll: true,
+        } +
+        // Loki-specific query structure
+        {
+          query: {
+            label: clusterLabel,
+            stream: '{job=~"$job"}',
+            type: '1',
+          },
+        }
+      else
+        query.new(
+          'cluster',
+          'label_values(namespace_kind_type:kubernetes_events:count1m{}, %s)' % clusterLabel,
+        ) +
+        query.withDatasourceFromVariable(this.datasource) +
+        query.withSort(1) +
+        query.generalOptions.withLabel('Cluster') +
+        query.refresh.onLoad() +
+        query.refresh.onTime() +
+        {
+          multi: true,
+          includeAll: true,
+        },
 
     // Loki-specific job variable
     job:
@@ -69,14 +107,14 @@ local textbox = variable.textbox;
         {
           query: {
             label: 'k8s_resource_kind',
-            stream: '{job=~"$job"}',
+            stream: '{job=~"$job", %s=~"$cluster"}' % clusterLabel,
             type: '1',
           },
         }
       else
         query.new(
           'kind',
-          'label_values(namespace_kind_type:kubernetes_events:count1m{}, k8s_resource_kind)' % config,
+          'label_values(namespace_kind_type:kubernetes_events:count1m{%s=~"$cluster"}, k8s_resource_kind)' % clusterLabel,
         ) +
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
@@ -96,14 +134,14 @@ local textbox = variable.textbox;
         {
           query: {
             label: 'k8s_namespace_name',
-            stream: '{job=~"$job", k8s_resource_kind="$kind"}',
+            stream: '{job=~"$job", %s=~"$cluster", k8s_resource_kind="$kind"}' % clusterLabel,
             type: '1',
           },
         }
       else
         query.new(
           'namespace',
-          'label_values(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind"}, k8s_namespace_name)' % config,
+          'label_values(namespace_kind_type:kubernetes_events:count1m{%s=~"$cluster", k8s_resource_kind="$kind"}, k8s_namespace_name)' % clusterLabel,
         ) +
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
