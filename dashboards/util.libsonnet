@@ -15,22 +15,27 @@ local textbox = variable.textbox;
     cluster: '%(clusterLabel)s=~"$cluster"' % { clusterLabel: clusterLabel },
     job: 'job=~"$job"',
     kind: 'k8s_resource_kind="$kind"',
-    namespace: 'k8s_namespace_name="$namespace"',
+    namespace: 'k8s_namespace_name=~"$namespace"',
+    type: 'type=~"$type"',
+    promType: 'type=~"$type"',
+    logType: 'k8s_resource_type=~"$type"',
 
-    // PromQL: cluster + kind + namespace
+    // PromQL: cluster + kind + namespace + type
     default: |||
       %(cluster)s,
       %(kind)s,
-      %(namespace)s
+      %(namespace)s,
+      %(promType)s
     ||| % this,
 
-    // LogQL stream selector: job + cluster + kind + namespace
+    // LogQL stream selector: job + cluster + kind + namespace (type is a JSON field, filtered post-parse)
     logs: |||
       %(job)s,
       %(cluster)s,
       %(kind)s,
       %(namespace)s
     ||| % this,
+    logsTypeFilter: '| type=~"$type"',
   },
 
   // Unified variables function that supports both Prometheus and Loki datasources
@@ -134,7 +139,7 @@ local textbox = variable.textbox;
       else
         query.new(
           'kind',
-          'label_values(namespace_kind_type:kubernetes_events:count1m{%(cluster)s}, k8s_resource_kind)' % defaultFilters,
+          'label_values(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, %(type)s}, k8s_resource_kind)' % defaultFilters,
         ) +
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
@@ -148,6 +153,8 @@ local textbox = variable.textbox;
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
         query.generalOptions.withLabel('Namespace') +
+        query.selectionOptions.withMulti(true) +
+        query.selectionOptions.withIncludeAll(true) +
         query.refresh.onLoad() +
         query.refresh.onTime() +
         // Loki-specific query structure
@@ -161,11 +168,36 @@ local textbox = variable.textbox;
       else
         query.new(
           'namespace',
-          'label_values(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, %(kind)s}, k8s_namespace_name)' % defaultFilters,
+          'label_values(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, %(type)s, %(kind)s}, k8s_namespace_name)' % defaultFilters,
         ) +
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
         query.generalOptions.withLabel('Namespace') +
+        query.selectionOptions.withMulti(true) +
+        query.selectionOptions.withIncludeAll(true) +
+        query.refresh.onLoad() +
+        query.refresh.onTime(),
+
+    type:
+      if isLoki then
+        variable.custom.new(
+          'type',
+          ['Normal', 'Warning'],
+        ) +
+        variable.custom.generalOptions.withLabel('Event Type') +
+        variable.custom.selectionOptions.withMulti(true) +
+        variable.custom.selectionOptions.withIncludeAll(true, '.*') +
+        variable.custom.generalOptions.withCurrent('All', '$__all')
+      else
+        query.new(
+          'type',
+          'label_values(namespace_kind_type:kubernetes_events:count1m{%(cluster)s}, type)' % defaultFilters,
+        ) +
+        query.withDatasourceFromVariable(this.datasource) +
+        query.withSort(1) +
+        query.generalOptions.withLabel('Event Type') +
+        query.selectionOptions.withMulti(true) +
+        query.selectionOptions.withIncludeAll(true, '.*') +
         query.refresh.onLoad() +
         query.refresh.onTime(),
 

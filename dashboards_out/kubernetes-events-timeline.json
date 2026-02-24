@@ -31,7 +31,7 @@
             "y": 0
          },
          "id": 1,
-         "title": "Events Logs ($cluster / $kind / $namespace / $name - name)",
+         "title": "Events Logs ($cluster $type $kind $namespace $name)",
          "type": "row"
       },
       {
@@ -59,7 +59,7 @@
                   "type": "loki",
                   "uid": "$datasource"
                },
-               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
+               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | type=~\"$type\" | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
                "maxLines": 200
             }
          ],
@@ -116,7 +116,7 @@
                   "type": "loki",
                   "uid": "$datasource"
                },
-               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format `{\"{{ .kind }} / {{ .name }}\": \"Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace \"\\\"\" \"'\" }}\"}`\n",
+               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | type=~\"$type\" | line_format `{\"{{ .kind }} {{ .name }}\": \"Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace \"\\\"\" \"'\" }}\"}`\n",
                "maxLines": 100
             }
          ],
@@ -183,6 +183,36 @@
             "type": "query"
          },
          {
+            "allValue": ".*",
+            "current": {
+               "selected": false,
+               "text": [
+                  "All"
+               ],
+               "value": [
+                  "$__all"
+               ]
+            },
+            "includeAll": true,
+            "label": "Event Type",
+            "multi": true,
+            "name": "type",
+            "options": [
+               {
+                  "selected": true,
+                  "text": "Normal",
+                  "value": "Normal"
+               },
+               {
+                  "selected": false,
+                  "text": "Warning",
+                  "value": "Warning"
+               }
+            ],
+            "query": "Normal : Normal,Warning : Warning",
+            "type": "custom"
+         },
+         {
             "datasource": {
                "type": "loki",
                "uid": "${datasource}"
@@ -203,7 +233,9 @@
                "type": "loki",
                "uid": "${datasource}"
             },
+            "includeAll": true,
             "label": "Namespace",
+            "multi": true,
             "name": "namespace",
             "query": {
                "label": "k8s_namespace_name",
