@@ -34,11 +34,11 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local queries = {
         events: |||
-          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json %(logsTypeFilter)s | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
+          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
         ||| % defaultFilters,
 
         eventsTimeline: |||
-          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json %(logsTypeFilter)s | line_format `{"{{ .kind }} {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
+          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format `{"{{ .kind }} {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
         ||| % defaultFilters,
       };
 

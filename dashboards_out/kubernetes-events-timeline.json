@@ -59,7 +59,7 @@
                   "type": "loki",
                   "uid": "$datasource"
                },
-               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | type=~\"$type\" | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
+               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\",\nk8s_event_type=~\"$type\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
                "maxLines": 200
             }
          ],
@@ -116,7 +116,7 @@
                   "type": "loki",
                   "uid": "$datasource"
                },
-               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | type=~\"$type\" | line_format `{\"{{ .kind }} {{ .name }}\": \"Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace \"\\\"\" \"'\" }}\"}`\n",
+               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\",\nk8s_event_type=~\"$type\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format `{\"{{ .kind }} {{ .name }}\": \"Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace \"\\\"\" \"'\" }}\"}`\n",
                "maxLines": 100
             }
          ],
@@ -184,33 +184,22 @@
          },
          {
             "allValue": ".*",
-            "current": {
-               "selected": false,
-               "text": [
-                  "All"
-               ],
-               "value": [
-                  "$__all"
-               ]
+            "datasource": {
+               "type": "loki",
+               "uid": "${datasource}"
             },
             "includeAll": true,
             "label": "Event Type",
             "multi": true,
             "name": "type",
-            "options": [
-               {
-                  "selected": true,
-                  "text": "Normal",
-                  "value": "Normal"
-               },
-               {
-                  "selected": false,
-                  "text": "Warning",
-                  "value": "Warning"
-               }
-            ],
-            "query": "Normal : Normal,Warning : Warning",
-            "type": "custom"
+            "query": {
+               "label": "k8s_event_type",
+               "stream": "{job=~\"$job\", cluster=~\"$cluster\"}",
+               "type": "1"
+            },
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
          },
          {
             "datasource": {
@@ -221,7 +210,7 @@
             "name": "kind",
             "query": {
                "label": "k8s_resource_kind",
-               "stream": "{job=~\"$job\", cluster=~\"$cluster\"}",
+               "stream": "{job=~\"$job\", cluster=~\"$cluster\", k8s_event_type=~\"$type\"}",
                "type": "1"
             },
             "refresh": 2,
@@ -239,7 +228,7 @@
             "name": "namespace",
             "query": {
                "label": "k8s_namespace_name",
-               "stream": "{job=~\"$job\", cluster=~\"$cluster\", k8s_resource_kind=\"$kind\"}",
+               "stream": "{job=~\"$job\", cluster=~\"$cluster\", k8s_event_type=~\"$type\", k8s_resource_kind=\"$kind\"}",
                "type": "1"
             },
             "refresh": 2,
