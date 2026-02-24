@@ -29,6 +29,7 @@ local pcOverride = pcStandardOptions.override;
       local variables = [
         defaultVariables.datasource,
         defaultVariables.cluster,
+        defaultVariables.type,
         defaultVariables.kind,
         defaultVariables.namespace,
       ];
@@ -39,18 +40,18 @@ local pcOverride = pcStandardOptions.override;
         tbPanelOptions.link.withTitle('Go To Timeline') +
         tbPanelOptions.link.withType('dashboard') +
         tbPanelOptions.link.withUrl(
-          '/d/%s/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
+          '/d/%s/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-type=${__data.fields.Type}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
         ) +
         tbPanelOptions.link.withTargetBlank(true);
 
       local queries = {
-        // Summary - All Events (cluster-scoped only, no kind/namespace filter)
+        // Summary - All Events (no kind/namespace filter)
         eventsCountSum: |||
-          sum(namespace_kind_type:kubernetes_events:count1m{%(cluster)s}) by (k8s_resource_kind, k8s_namespace_name, type)
+          sum(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, %(type)s}) by (k8s_resource_kind, k8s_namespace_name, type)
         ||| % defaultFilters,
 
         eventsCountNormalSum: |||
-          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, type="Normal"}[1w])) by (cluster, k8s_resource_kind, k8s_namespace_name))
+          topk(20, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, type="Normal"}[1w])) by (cluster, type, k8s_resource_kind, k8s_namespace_name))
         ||| % defaultFilters,
 
         eventsCountWarningSum: std.strReplace(self.eventsCountNormalSum, 'Normal', 'Warning'),
@@ -63,6 +64,10 @@ local pcOverride = pcStandardOptions.override;
         eventsCountByType: |||
           sum(namespace_kind_type:kubernetes_events:count1m{%(default)s}) by (type)
         ||| % defaultFilters,
+
+        eventsCountByResource: |||
+          topk(20, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(default)s}[1w])) by (cluster, type, k8s_resource_kind, k8s_namespace_name))
+        ||| % defaultFilters,
       };
 
       local panels = {
@@ -72,7 +77,7 @@ local pcOverride = pcStandardOptions.override;
             'Events',
             'short',
             queries.eventsCountSum,
-            '{{k8s_resource_kind}} / {{k8s_namespace_name}} / {{type}}',
+            '{{k8s_resource_kind}} {{k8s_namespace_name}} {{type}}',
             calcs=['lastNotNull', 'mean', 'max'],
             stack='normal',
             description='Total Event Emissions by Kind and Namespace[1w]',
@@ -90,13 +95,15 @@ local pcOverride = pcStandardOptions.override;
               tbQueryOptions.transformation.withOptions({
                 renameByName: {
                   cluster: 'Cluster',
+                  type: 'Type',
                   k8s_resource_kind: 'Kind',
                   k8s_namespace_name: 'Namespace',
                 },
                 indexByName: {
                   cluster: 0,
-                  k8s_resource_kind: 1,
-                  k8s_namespace_name: 2,
+                  type: 1,
+                  k8s_resource_kind: 2,
+                  k8s_namespace_name: 3,
                 },
                 excludeByName: {
                   Time: true,
@@ -118,13 +125,15 @@ local pcOverride = pcStandardOptions.override;
               tbQueryOptions.transformation.withOptions({
                 renameByName: {
                   cluster: 'Cluster',
+                  type: 'Type',
                   k8s_resource_kind: 'Kind',
                   k8s_namespace_name: 'Namespace',
                 },
                 indexByName: {
                   cluster: 0,
-                  k8s_resource_kind: 1,
-                  k8s_namespace_name: 2,
+                  type: 1,
+                  k8s_resource_kind: 2,
+                  k8s_namespace_name: 3,
                 },
                 excludeByName: {
                   Time: true,
@@ -168,6 +177,36 @@ local pcOverride = pcStandardOptions.override;
             stack='normal',
             description='Events by Type',
           ),
+
+        eventsCountByResourceTable:
+          mixinUtils.dashboards.tablePanel(
+            'Top 20 Event Emissions by Resource[1w]',
+            'short',
+            queries.eventsCountByResource,
+            description='Top 20 Event Emissions by Resource[1w]',
+            sortBy={ name: 'Value', desc: true },
+            transformations=[
+              tbQueryOptions.transformation.withId('organize') +
+              tbQueryOptions.transformation.withOptions({
+                renameByName: {
+                  cluster: 'Cluster',
+                  type: 'Type',
+                  k8s_resource_kind: 'Kind',
+                  k8s_namespace_name: 'Namespace',
+                },
+                indexByName: {
+                  cluster: 0,
+                  type: 1,
+                  k8s_resource_kind: 2,
+                  k8s_namespace_name: 3,
+                },
+                excludeByName: {
+                  Time: true,
+                },
+              }),
+            ],
+          ) +
+          tbStandardOptions.withLinks([timelineLink]),
       };
 
       local rows =
@@ -195,7 +234,7 @@ local pcOverride = pcStandardOptions.override;
           startY=7
         ) +
         [
-          row.new('Kind Summary ($kind / $namespace)') +
+          row.new('Kind Summary ($kind $namespace)') +
           row.gridPos.withX(0) +
           row.gridPos.withY(15) +
           row.gridPos.withW(24) +
@@ -212,6 +251,13 @@ local pcOverride = pcStandardOptions.override;
           timeSeriesPanel.gridPos.withY(16) +
           timeSeriesPanel.gridPos.withW(18) +
           timeSeriesPanel.gridPos.withH(6),
+        ] +
+        [
+          panels.eventsCountByResourceTable +
+          tablePanel.gridPos.withX(0) +
+          tablePanel.gridPos.withY(22) +
+          tablePanel.gridPos.withW(24) +
+          tablePanel.gridPos.withH(10),
         ];
 
 
