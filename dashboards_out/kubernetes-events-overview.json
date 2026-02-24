@@ -142,7 +142,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Normal\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Normal\"}[1w])) by (cluster, k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
@@ -156,10 +156,12 @@
                      "Time": true
                   },
                   "indexByName": {
-                     "k8s_namespace_name": 1,
-                     "k8s_resource_kind": 0
+                     "cluster": 0,
+                     "k8s_namespace_name": 2,
+                     "k8s_resource_kind": 1
                   },
                   "renameByName": {
+                     "cluster": "Cluster",
                      "k8s_namespace_name": "Namespace",
                      "k8s_resource_kind": "Kind"
                   }
@@ -216,7 +218,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Warning\"}[1w])) by (k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Warning\"}[1w])) by (cluster, k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
@@ -230,10 +232,12 @@
                      "Time": true
                   },
                   "indexByName": {
-                     "k8s_namespace_name": 1,
-                     "k8s_resource_kind": 0
+                     "cluster": 0,
+                     "k8s_namespace_name": 2,
+                     "k8s_resource_kind": 1
                   },
                   "renameByName": {
+                     "cluster": "Cluster",
                      "k8s_namespace_name": "Namespace",
                      "k8s_resource_kind": "Kind"
                   }

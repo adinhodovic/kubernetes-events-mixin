@@ -50,7 +50,7 @@ local pcOverride = pcStandardOptions.override;
         ||| % defaultFilters,
 
         eventsCountNormalSum: |||
-          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, type="Normal"}[1w])) by (k8s_resource_kind, k8s_namespace_name))
+          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, type="Normal"}[1w])) by (cluster, k8s_resource_kind, k8s_namespace_name))
         ||| % defaultFilters,
 
         eventsCountWarningSum: std.strReplace(self.eventsCountNormalSum, 'Normal', 'Warning'),
@@ -89,12 +89,14 @@ local pcOverride = pcStandardOptions.override;
               tbQueryOptions.transformation.withId('organize') +
               tbQueryOptions.transformation.withOptions({
                 renameByName: {
+                  cluster: 'Cluster',
                   k8s_resource_kind: 'Kind',
                   k8s_namespace_name: 'Namespace',
                 },
                 indexByName: {
-                  k8s_resource_kind: 0,
-                  k8s_namespace_name: 1,
+                  cluster: 0,
+                  k8s_resource_kind: 1,
+                  k8s_namespace_name: 2,
                 },
                 excludeByName: {
                   Time: true,
@@ -115,12 +117,14 @@ local pcOverride = pcStandardOptions.override;
               tbQueryOptions.transformation.withId('organize') +
               tbQueryOptions.transformation.withOptions({
                 renameByName: {
+                  cluster: 'Cluster',
                   k8s_resource_kind: 'Kind',
                   k8s_namespace_name: 'Namespace',
                 },
                 indexByName: {
-                  k8s_resource_kind: 0,
-                  k8s_namespace_name: 1,
+                  cluster: 0,
+                  k8s_resource_kind: 1,
+                  k8s_namespace_name: 2,
                 },
                 excludeByName: {
                   Time: true,
