@@ -87,8 +87,8 @@
                   "uid": "$datasource"
                },
                "exemplar": false,
-               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\"}) by (k8s_resource_kind, k8s_namespace_name, type)\n",
-               "legendFormat": "{{k8s_resource_kind}} / {{k8s_namespace_name}} / {{type}}"
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=~\"$type\"}) by (k8s_resource_kind, k8s_namespace_name, type)\n",
+               "legendFormat": "{{k8s_resource_kind}} {{k8s_namespace_name}} {{type}}"
             }
          ],
          "title": "Events",
@@ -107,7 +107,7 @@
                      "targetBlank": true,
                      "title": "Go To Timeline",
                      "type": "dashboard",
-                     "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                     "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-type=${__data.fields.Type}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
                   }
                ],
                "thresholds": {
@@ -142,7 +142,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Normal\"}[1w])) by (cluster, k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(20, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Normal\"}[1w])) by (cluster, type, k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
@@ -157,13 +157,15 @@
                   },
                   "indexByName": {
                      "cluster": 0,
-                     "k8s_namespace_name": 2,
-                     "k8s_resource_kind": 1
+                     "k8s_namespace_name": 3,
+                     "k8s_resource_kind": 2,
+                     "type": 1
                   },
                   "renameByName": {
                      "cluster": "Cluster",
                      "k8s_namespace_name": "Namespace",
-                     "k8s_resource_kind": "Kind"
+                     "k8s_resource_kind": "Kind",
+                     "type": "Type"
                   }
                }
             }
@@ -183,7 +185,7 @@
                      "targetBlank": true,
                      "title": "Go To Timeline",
                      "type": "dashboard",
-                     "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                     "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-type=${__data.fields.Type}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
                   }
                ],
                "thresholds": {
@@ -218,7 +220,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Warning\"}[1w])) by (cluster, k8s_resource_kind, k8s_namespace_name))\n",
+               "expr": "topk(20, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=\"Warning\"}[1w])) by (cluster, type, k8s_resource_kind, k8s_namespace_name))\n",
                "format": "table",
                "instant": true
             }
@@ -233,13 +235,15 @@
                   },
                   "indexByName": {
                      "cluster": 0,
-                     "k8s_namespace_name": 2,
-                     "k8s_resource_kind": 1
+                     "k8s_namespace_name": 3,
+                     "k8s_resource_kind": 2,
+                     "type": 1
                   },
                   "renameByName": {
                      "cluster": "Cluster",
                      "k8s_namespace_name": "Namespace",
-                     "k8s_resource_kind": "Kind"
+                     "k8s_resource_kind": "Kind",
+                     "type": "Type"
                   }
                }
             }
@@ -255,7 +259,7 @@
             "y": 15
          },
          "id": 5,
-         "title": "Kind Summary ($kind / $namespace)",
+         "title": "Kind Summary ($kind $namespace)",
          "type": "row"
       },
       {
@@ -334,7 +338,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n}[1w])) by (type)\n",
+               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\",\ntype=~\"$type\"\n}[1w])) by (type)\n",
                "instant": true,
                "legendFormat": "{{ type }}"
             }
@@ -395,12 +399,90 @@
                   "uid": "$datasource"
                },
                "exemplar": false,
-               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n}) by (type)\n",
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\",\ntype=~\"$type\"\n}) by (type)\n",
                "legendFormat": "{{type}}"
             }
          ],
          "title": "Events by Type",
          "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+         },
+         "description": "Top 20 Event Emissions by Resource[1w]",
+         "fieldConfig": {
+            "defaults": {
+               "links": [
+                  {
+                     "targetBlank": true,
+                     "title": "Go To Timeline",
+                     "type": "dashboard",
+                     "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-type=${__data.fields.Type}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                  }
+               ],
+               "thresholds": {
+                  "steps": [ ]
+               },
+               "unit": "short"
+            },
+            "overrides": [ ]
+         },
+         "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 22
+         },
+         "id": 8,
+         "options": {
+            "footer": {
+               "enablePagination": true
+            },
+            "sortBy": [
+               {
+                  "desc": true,
+                  "displayName": "Value"
+               }
+            ]
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "topk(20, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\",\ntype=~\"$type\"\n}[1w])) by (cluster, type, k8s_resource_kind, k8s_namespace_name))\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Top 20 Event Emissions by Resource[1w]",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true
+                  },
+                  "indexByName": {
+                     "cluster": 0,
+                     "k8s_namespace_name": 3,
+                     "k8s_resource_kind": 2,
+                     "type": 1
+                  },
+                  "renameByName": {
+                     "cluster": "Cluster",
+                     "k8s_namespace_name": "Namespace",
+                     "k8s_resource_kind": "Kind",
+                     "type": "Type"
+                  }
+               }
+            }
+         ],
+         "type": "table"
       }
    ],
    "schemaVersion": 39,
@@ -438,13 +520,16 @@
             "type": "query"
          },
          {
+            "allValue": ".*",
             "datasource": {
                "type": "prometheus",
                "uid": "${datasource}"
             },
-            "label": "Kind",
-            "name": "kind",
-            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\"}, k8s_resource_kind)",
+            "includeAll": true,
+            "label": "Event Type",
+            "multi": true,
+            "name": "type",
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\"}, type)",
             "refresh": 2,
             "sort": 1,
             "type": "query"
@@ -454,9 +539,23 @@
                "type": "prometheus",
                "uid": "${datasource}"
             },
+            "label": "Kind",
+            "name": "kind",
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=~\"$type\"}, k8s_resource_kind)",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "includeAll": true,
             "label": "Namespace",
+            "multi": true,
             "name": "namespace",
-            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", k8s_resource_kind=\"$kind\"}, k8s_namespace_name)",
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", type=~\"$type\", k8s_resource_kind=\"$kind\"}, k8s_namespace_name)",
             "refresh": 2,
             "sort": 1,
             "type": "query"

@@ -25,6 +25,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
         lokiVariables.datasource,
         lokiVariables.cluster,
         lokiVariables.job,
+        lokiVariables.type,
         lokiVariables.kind,
         lokiVariables.namespace,
         lokiVariables.name,
@@ -33,11 +34,11 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local queries = {
         events: |||
-          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
+          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json %(logsTypeFilter)s | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
         ||| % defaultFilters,
 
         eventsTimeline: |||
-          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format `{"{{ .kind }} / {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
+          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json %(logsTypeFilter)s | line_format `{"{{ .kind }} {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
         ||| % defaultFilters,
       };
 
@@ -85,7 +86,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local rows =
         [
-          row.new('Events Logs ($cluster / $kind / $namespace / $name - name)') +
+          row.new('Events Logs ($cluster $type $kind $namespace $name)') +
           row.gridPos.withX(0) +
           row.gridPos.withY(0) +
           row.gridPos.withW(24) +
