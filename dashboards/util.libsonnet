@@ -18,7 +18,6 @@ local textbox = variable.textbox;
     namespace: 'k8s_namespace_name=~"$namespace"',
     type: 'type=~"$type"',
     promType: 'type=~"$type"',
-    logType: 'k8s_resource_type=~"$type"',
 
     // PromQL: cluster + kind + namespace + type
     default: |||
@@ -28,14 +27,16 @@ local textbox = variable.textbox;
       %(promType)s
     ||| % this,
 
-    // LogQL stream selector: job + cluster + kind + namespace (type is a JSON field, filtered post-parse)
+    eventType: 'k8s_event_type=~"$type"',
+
+    // LogQL stream selector: job + cluster + kind + namespace + event type (indexed label)
     logs: |||
       %(job)s,
       %(cluster)s,
       %(kind)s,
-      %(namespace)s
+      %(namespace)s,
+      %(eventType)s
     ||| % this,
-    logsTypeFilter: '| type=~"$type"',
   },
 
   // Unified variables function that supports both Prometheus and Loki datasources
@@ -132,7 +133,7 @@ local textbox = variable.textbox;
         {
           query: {
             label: 'k8s_resource_kind',
-            stream: '{job=~"$job", %s=~"$cluster"}' % clusterLabel,
+            stream: '{job=~"$job", %s=~"$cluster", k8s_event_type=~"$type"}' % clusterLabel,
             type: '1',
           },
         }
@@ -161,7 +162,7 @@ local textbox = variable.textbox;
         {
           query: {
             label: 'k8s_namespace_name',
-            stream: '{job=~"$job", %s=~"$cluster", k8s_resource_kind="$kind"}' % clusterLabel,
+            stream: '{job=~"$job", %s=~"$cluster", k8s_event_type=~"$type", k8s_resource_kind="$kind"}' % clusterLabel,
             type: '1',
           },
         }
@@ -180,14 +181,22 @@ local textbox = variable.textbox;
 
     type:
       if isLoki then
-        variable.custom.new(
-          'type',
-          ['Normal', 'Warning'],
-        ) +
-        variable.custom.generalOptions.withLabel('Event Type') +
-        variable.custom.selectionOptions.withMulti(true) +
-        variable.custom.selectionOptions.withIncludeAll(true, '.*') +
-        variable.custom.generalOptions.withCurrent('All', '$__all')
+        query.new('type') +
+        query.withDatasourceFromVariable(this.datasource) +
+        query.withSort(1) +
+        query.generalOptions.withLabel('Event Type') +
+        query.selectionOptions.withMulti(true) +
+        query.selectionOptions.withIncludeAll(true, '.*') +
+        query.refresh.onLoad() +
+        query.refresh.onTime() +
+        // Loki-specific query structure
+        {
+          query: {
+            label: 'k8s_event_type',
+            stream: '{job=~"$job", %s=~"$cluster"}' % clusterLabel,
+            type: '1',
+          },
+        }
       else
         query.new(
           'type',
