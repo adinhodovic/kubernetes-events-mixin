@@ -1,10 +1,16 @@
 {
    "__inputs": [ ],
    "__requires": [ ],
-   "description": "A dashboard that monitors Kubernetes Events and focuses on giving a overview for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/",
-   "editable": true,
+   "annotations": {
+      "list": [ ]
+   },
+   "description": "A dashboard that monitors Kubernetes Events and focuses on giving a overview for events. A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/. The dashboards were generated using [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). Open issues and create feature requests in the repository.",
+   "editable": false,
    "links": [
       {
+         "asDropdown": false,
+         "includeVars": false,
+         "keepTime": true,
          "tags": [
             "kubernetes",
             "kubernetes-events",
@@ -96,33 +102,20 @@
          "description": "Top 10 Normal Event Emissions by Kind and Namespace[1w]",
          "fieldConfig": {
             "defaults": {
-               "links": [ ],
+               "links": [
+                  {
+                     "targetBlank": true,
+                     "title": "Go To Timeline",
+                     "type": "dashboard",
+                     "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                  }
+               ],
                "thresholds": {
                   "steps": [ ]
                },
                "unit": "short"
             },
-            "overrides": [
-               {
-                  "matcher": {
-                     "id": "byName",
-                     "options": "Kind"
-                  },
-                  "properties": [
-                     {
-                        "id": "links",
-                        "value": [
-                           {
-                              "targetBlank": true,
-                              "title": "Go To Timeline",
-                              "type": "dashboard",
-                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
-                           }
-                        ]
-                     }
-                  ]
-               }
-            ]
+            "overrides": [ ]
          },
          "gridPos": {
             "h": 8,
@@ -183,33 +176,20 @@
          "description": "Top 10 Warning Event Emissions by Kind and Namespace[1w]",
          "fieldConfig": {
             "defaults": {
-               "links": [ ],
+               "links": [
+                  {
+                     "targetBlank": true,
+                     "title": "Go To Timeline",
+                     "type": "dashboard",
+                     "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
+                  }
+               ],
                "thresholds": {
                   "steps": [ ]
                },
                "unit": "short"
             },
-            "overrides": [
-               {
-                  "matcher": {
-                     "id": "byName",
-                     "options": "Kind"
-                  },
-                  "properties": [
-                     {
-                        "id": "links",
-                        "value": [
-                           {
-                              "targetBlank": true,
-                              "title": "Go To Timeline",
-                              "type": "dashboard",
-                              "url": "/d/kubernetes-events-mixin-timeline-jkwq/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}"
-                           }
-                        ]
-                     }
-                  ]
-               }
-            ]
+            "overrides": [ ]
          },
          "gridPos": {
             "h": 8,
@@ -350,7 +330,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(clusterLabel)s=~\"$cluster\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}[1w])) by (type)\n",
+               "expr": "sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n}[1w])) by (type)\n",
                "instant": true,
                "legendFormat": "{{ type }}"
             }
@@ -411,7 +391,7 @@
                   "uid": "$datasource"
                },
                "exemplar": false,
-               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"}) by ( type)\n",
+               "expr": "sum(namespace_kind_type:kubernetes_events:count1m{cluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n}) by (type)\n",
                "legendFormat": "{{type}}"
             }
          ],
@@ -437,6 +417,21 @@
             "name": "datasource",
             "query": "prometheus",
             "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "hide": 0,
+            "includeAll": true,
+            "label": "Cluster",
+            "multi": true,
+            "name": "cluster",
+            "query": "label_values(namespace_kind_type:kubernetes_events:count1m{}, cluster)",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
          },
          {
             "datasource": {

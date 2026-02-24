@@ -10,15 +10,27 @@ local textbox = variable.textbox;
 {
   filters(config):: {
     local this = self,
-    cluster:
-      if std.get(config, 'showMultiCluster', false) then
-        '%(clusterLabel)s=~"$cluster"' % { clusterLabel: std.get(config, 'clusterLabel', 'cluster') }
-      else
-        '',
+    local clusterLabel = std.get(config, 'clusterLabel', 'cluster'),
+
+    cluster: '%(clusterLabel)s=~"$cluster"' % { clusterLabel: clusterLabel },
+    job: 'job=~"$job"',
     kind: 'k8s_resource_kind="$kind"',
     namespace: 'k8s_namespace_name="$namespace"',
 
-    default: std.join(',', std.filter(function(x) x != '', [this.cluster, this.kind, this.namespace])),
+    // PromQL: cluster + kind + namespace
+    default: |||
+      %(cluster)s,
+      %(kind)s,
+      %(namespace)s
+    ||| % this,
+
+    // LogQL stream selector: job + cluster + kind + namespace
+    logs: |||
+      %(job)s,
+      %(cluster)s,
+      %(kind)s,
+      %(namespace)s
+    ||| % this,
   },
 
   // Unified variables function that supports both Prometheus and Loki datasources
@@ -28,6 +40,8 @@ local textbox = variable.textbox;
     local dsType = std.get(config, 'datasourceType', 'prometheus'),
     local isLoki = dsType == 'loki',
     local clusterLabel = std.get(config, 'clusterLabel', 'cluster'),
+
+    local defaultFilters = $.filters(config),
 
     datasource:
       datasource.new(
@@ -53,12 +67,15 @@ local textbox = variable.textbox;
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
         query.generalOptions.withLabel('Cluster') +
+        query.selectionOptions.withMulti(true) +
+        query.selectionOptions.withIncludeAll(true) +
         query.refresh.onLoad() +
         query.refresh.onTime() +
-        {
-          multi: true,
-          includeAll: true,
-        } +
+        (
+          if config.showMultiCluster
+          then query.generalOptions.showOnDashboard.withLabelAndValue()
+          else query.generalOptions.showOnDashboard.withNothing()
+        ) +
         // Loki-specific query structure
         {
           query: {
@@ -75,12 +92,15 @@ local textbox = variable.textbox;
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
         query.generalOptions.withLabel('Cluster') +
+        query.selectionOptions.withMulti(true) +
+        query.selectionOptions.withIncludeAll(true) +
         query.refresh.onLoad() +
         query.refresh.onTime() +
-        {
-          multi: true,
-          includeAll: true,
-        },
+        (
+          if config.showMultiCluster
+          then query.generalOptions.showOnDashboard.withLabelAndValue()
+          else query.generalOptions.showOnDashboard.withNothing()
+        ),
 
     // Loki-specific job variable
     job:
@@ -114,7 +134,7 @@ local textbox = variable.textbox;
       else
         query.new(
           'kind',
-          'label_values(namespace_kind_type:kubernetes_events:count1m{%s=~"$cluster"}, k8s_resource_kind)' % clusterLabel,
+          'label_values(namespace_kind_type:kubernetes_events:count1m{%(cluster)s}, k8s_resource_kind)' % defaultFilters,
         ) +
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
@@ -141,7 +161,7 @@ local textbox = variable.textbox;
       else
         query.new(
           'namespace',
-          'label_values(namespace_kind_type:kubernetes_events:count1m{%s=~"$cluster", k8s_resource_kind="$kind"}, k8s_namespace_name)' % clusterLabel,
+          'label_values(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, %(kind)s}, k8s_namespace_name)' % defaultFilters,
         ) +
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
