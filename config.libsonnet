@@ -13,7 +13,7 @@
     grafanaUrl: 'https://grafana.com',
 
     // Opt-in to multiCluster dashboards by overriding this and the clusterLabel.
-    showMultiCluster: true,
+    showMultiCluster: false,
     clusterLabel: 'cluster',
 
     // Dashboard panel configuration

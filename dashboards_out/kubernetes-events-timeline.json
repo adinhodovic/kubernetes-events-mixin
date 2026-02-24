@@ -155,7 +155,7 @@
                "type": "loki",
                "uid": "${datasource}"
             },
-            "hide": 0,
+            "hide": 2,
             "includeAll": true,
             "label": "Cluster",
             "multi": true,
