@@ -17,10 +17,13 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
   grafanaDashboards+:: {
     ['%s.json' % dashboardName]:
 
-      local lokiVariables = util.variables($._config { datasourceType: 'loki' });
+      local lokiConfig = $._config { datasourceType: 'loki' };
+      local lokiVariables = util.variables(lokiConfig);
+      local defaultFilters = util.filters(lokiConfig);
 
       local variables = [
         lokiVariables.datasource,
+        lokiVariables.cluster,
         lokiVariables.job,
         lokiVariables.kind,
         lokiVariables.namespace,
@@ -30,12 +33,12 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local queries = {
         events: |||
-          {job=~"$job", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
-        |||,
+          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
+        ||| % defaultFilters,
 
         eventsTimeline: |||
-          {job="$job", k8s_resource_kind="$kind", k8s_namespace_name="$namespace"} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format `{"{{ .kind }} / {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
-        |||,
+          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format `{"{{ .kind }} / {{ .name }}": "Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace "\"" "'" }}"}`
+        ||| % defaultFilters,
       };
 
       local panels = {
@@ -82,7 +85,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local rows =
         [
-          row.new('Events Logs ($kind / $namespace / $name - name)') +
+          row.new('Events Logs ($cluster / $kind / $namespace / $name - name)') +
           row.gridPos.withX(0) +
           row.gridPos.withY(0) +
           row.gridPos.withW(24) +
@@ -108,22 +111,24 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
       dashboard.new(
         'Kubernetes / Events / Timeline',
       ) +
-      dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/') +
+      dashboard.withDescription(
+        'A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/. %s' % mixinUtils.dashboards.dashboardDescriptionLink('kubernetes-events-mixin', 'https://github.com/adinhodovic/kubernetes-events-mixin')
+      ) +
       dashboard.withUid($._config.dashboardIds[dashboardName]) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
-      dashboard.withEditable(true) +
+      dashboard.withEditable(false) +
       dashboard.time.withFrom('now-3h') +
       dashboard.time.withTo('now') +
       dashboard.withVariables(variables) +
       dashboard.withLinks(
-        [
-          dashboard.link.dashboards.new('Kubernetes Events', $._config.tags) +
-          dashboard.link.link.options.withTargetBlank(true),
-        ]
+        mixinUtils.dashboards.dashboardLinks('Kubernetes Events', $._config)
       ) +
       dashboard.withPanels(
         rows
+      ) +
+      dashboard.withAnnotations(
+        mixinUtils.dashboards.annotations($._config, defaultFilters)
       ),
   },
 }

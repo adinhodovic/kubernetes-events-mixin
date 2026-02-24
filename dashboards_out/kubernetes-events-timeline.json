@@ -1,10 +1,16 @@
 {
    "__inputs": [ ],
    "__requires": [ ],
-   "description": "A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/",
-   "editable": true,
+   "annotations": {
+      "list": [ ]
+   },
+   "description": "A dashboard that monitors Kubernetes Events and focuses on giving a timeline for events. A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/. The dashboards were generated using [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). Open issues and create feature requests in the repository.",
+   "editable": false,
    "links": [
       {
+         "asDropdown": false,
+         "includeVars": false,
+         "keepTime": true,
          "tags": [
             "kubernetes",
             "kubernetes-events",
@@ -25,7 +31,7 @@
             "y": 0
          },
          "id": 1,
-         "title": "Events Logs ($kind / $namespace / $name - name)",
+         "title": "Events Logs ($cluster / $kind / $namespace / $name - name)",
          "type": "row"
       },
       {
@@ -53,7 +59,7 @@
                   "type": "loki",
                   "uid": "$datasource"
                },
-               "expr": "{job=~\"$job\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
+               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
                "maxLines": 200
             }
          ],
@@ -110,7 +116,7 @@
                   "type": "loki",
                   "uid": "$datasource"
                },
-               "expr": "{job=\"$job\", k8s_resource_kind=\"$kind\", k8s_namespace_name=\"$namespace\"} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format `{\"{{ .kind }} / {{ .name }}\": \"Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace \"\\\"\" \"'\" }}\"}`\n",
+               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=\"$namespace\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format `{\"{{ .kind }} / {{ .name }}\": \"Type: {{ .type }} | Reason: {{ .reason }} | Event: {{ .msg | replace \"\\\"\" \"'\" }}\"}`\n",
                "maxLines": 100
             }
          ],
@@ -149,6 +155,25 @@
                "type": "loki",
                "uid": "${datasource}"
             },
+            "hide": 2,
+            "includeAll": true,
+            "label": "Cluster",
+            "multi": true,
+            "name": "cluster",
+            "query": {
+               "label": "cluster",
+               "stream": "{job=~\"$job\"}",
+               "type": "1"
+            },
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "loki",
+               "uid": "${datasource}"
+            },
             "label": "Job",
             "name": "job",
             "query": "label_values(job)",
@@ -166,7 +191,7 @@
             "name": "kind",
             "query": {
                "label": "k8s_resource_kind",
-               "stream": "{job=~\"$job\"}",
+               "stream": "{job=~\"$job\", cluster=~\"$cluster\"}",
                "type": "1"
             },
             "refresh": 2,
@@ -182,7 +207,7 @@
             "name": "namespace",
             "query": {
                "label": "k8s_namespace_name",
-               "stream": "{job=~\"$job\", k8s_resource_kind=\"$kind\"}",
+               "stream": "{job=~\"$job\", cluster=~\"$cluster\", k8s_resource_kind=\"$kind\"}",
                "type": "1"
             },
             "refresh": 2,

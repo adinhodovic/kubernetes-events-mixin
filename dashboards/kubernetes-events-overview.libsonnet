@@ -14,7 +14,6 @@ local pieChartPanel = g.panel.pieChart;
 local tbStandardOptions = tablePanel.standardOptions;
 local tbQueryOptions = tablePanel.queryOptions;
 local tbPanelOptions = tablePanel.panelOptions;
-local tbOverride = tbStandardOptions.override;
 
 // Pie Chart (for custom configurations not covered by mixinUtils)
 local pcStandardOptions = pieChartPanel.standardOptions;
@@ -29,30 +28,41 @@ local pcOverride = pcStandardOptions.override;
 
       local variables = [
         defaultVariables.datasource,
+        defaultVariables.cluster,
         defaultVariables.kind,
         defaultVariables.namespace,
       ];
 
+      local defaultFilters = util.filters($._config);
+
+      local timelineLink =
+        tbPanelOptions.link.withTitle('Go To Timeline') +
+        tbPanelOptions.link.withType('dashboard') +
+        tbPanelOptions.link.withUrl(
+          '/d/%s/kubernetes-events-timeline?var-cluster=${__data.fields.Cluster}&var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
+        ) +
+        tbPanelOptions.link.withTargetBlank(true);
+
       local queries = {
-        // Summary - All Events
+        // Summary - All Events (cluster-scoped only, no kind/namespace filter)
         eventsCountSum: |||
-          sum(namespace_kind_type:kubernetes_events:count1m{}) by (k8s_resource_kind, k8s_namespace_name, type)
-        ||| % $._config,
+          sum(namespace_kind_type:kubernetes_events:count1m{%(cluster)s}) by (k8s_resource_kind, k8s_namespace_name, type)
+        ||| % defaultFilters,
 
         eventsCountNormalSum: |||
-          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{type="Normal"}[1w])) by (k8s_resource_kind, k8s_namespace_name))
-        ||| % $._config,
+          topk(10, sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(cluster)s, type="Normal"}[1w])) by (cluster, k8s_resource_kind, k8s_namespace_name))
+        ||| % defaultFilters,
 
         eventsCountWarningSum: std.strReplace(self.eventsCountNormalSum, 'Normal', 'Warning'),
 
         // Kind Summary
         eventsCountByType1w: |||
-          sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}[1w])) by (type)
-        |||,
+          sum(count_over_time(namespace_kind_type:kubernetes_events:count1m{%(default)s}[1w])) by (type)
+        ||| % defaultFilters,
 
         eventsCountByType: |||
-          sum(namespace_kind_type:kubernetes_events:count1m{k8s_resource_kind="$kind", k8s_namespace_name="$namespace"}) by ( type)
-        ||| % $._config,
+          sum(namespace_kind_type:kubernetes_events:count1m{%(default)s}) by (type)
+        ||| % defaultFilters,
       };
 
       local panels = {
@@ -79,32 +89,22 @@ local pcOverride = pcStandardOptions.override;
               tbQueryOptions.transformation.withId('organize') +
               tbQueryOptions.transformation.withOptions({
                 renameByName: {
+                  cluster: 'Cluster',
                   k8s_resource_kind: 'Kind',
                   k8s_namespace_name: 'Namespace',
                 },
                 indexByName: {
-                  k8s_resource_kind: 0,
-                  k8s_namespace_name: 1,
+                  cluster: 0,
+                  k8s_resource_kind: 1,
+                  k8s_namespace_name: 2,
                 },
                 excludeByName: {
                   Time: true,
                 },
               }),
             ],
-            overrides=[
-              tbOverride.byName.new('Kind') +
-              tbOverride.byName.withPropertiesFromOptions(
-                tbStandardOptions.withLinks(
-                  tbPanelOptions.link.withTitle('Go To Timeline') +
-                  tbPanelOptions.link.withType('dashboard') +
-                  tbPanelOptions.link.withUrl(
-                    '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
-                  ) +
-                  tbPanelOptions.link.withTargetBlank(true)
-                )
-              ),
-            ]
-          ),
+          ) +
+          tbStandardOptions.withLinks([timelineLink]),
 
         eventsCountWarningSumTable:
           mixinUtils.dashboards.tablePanel(
@@ -117,32 +117,22 @@ local pcOverride = pcStandardOptions.override;
               tbQueryOptions.transformation.withId('organize') +
               tbQueryOptions.transformation.withOptions({
                 renameByName: {
+                  cluster: 'Cluster',
                   k8s_resource_kind: 'Kind',
                   k8s_namespace_name: 'Namespace',
                 },
                 indexByName: {
-                  k8s_resource_kind: 0,
-                  k8s_namespace_name: 1,
+                  cluster: 0,
+                  k8s_resource_kind: 1,
+                  k8s_namespace_name: 2,
                 },
                 excludeByName: {
                   Time: true,
                 },
               }),
             ],
-            overrides=[
-              tbOverride.byName.new('Kind') +
-              tbOverride.byName.withPropertiesFromOptions(
-                tbStandardOptions.withLinks(
-                  tbPanelOptions.link.withTitle('Go To Timeline') +
-                  tbPanelOptions.link.withType('dashboard') +
-                  tbPanelOptions.link.withUrl(
-                    '/d/%s/kubernetes-events-timeline?var-kind=${__data.fields.Kind}&var-namespace=${__data.fields.Namespace}' % $._config.dashboardIds['kubernetes-events-timeline']
-                  ) +
-                  tbPanelOptions.link.withTargetBlank(true)
-                )
-              ),
-            ]
-          ),
+          ) +
+          tbStandardOptions.withLinks([timelineLink]),
 
         // Kind Summary
         eventsCountByType1wPieChart:
@@ -229,22 +219,24 @@ local pcOverride = pcStandardOptions.override;
       dashboard.new(
         'Kubernetes / Events / Overview',
       ) +
-      dashboard.withDescription('A dashboard that monitors Kubernetes Events and focuses on giving a overview for events. It is created using the [kubernetes-events-mixin](https://github.com/adinhodovic/kubernetes-events-mixin). A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/') +
+      dashboard.withDescription(
+        'A dashboard that monitors Kubernetes Events and focuses on giving a overview for events. A pre requisite is configuring Loki, Alloy and Prometheus - it is described in this blog post: https://hodovi.cc/blog/kubernetes-events-monitoring-with-loki-alloy-and-grafana/. %s' % mixinUtils.dashboards.dashboardDescriptionLink('kubernetes-events-mixin', 'https://github.com/adinhodovic/kubernetes-events-mixin')
+      ) +
       dashboard.withUid($._config.dashboardIds[dashboardName]) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
-      dashboard.withEditable(true) +
+      dashboard.withEditable(false) +
       dashboard.time.withFrom('now-3h') +
       dashboard.time.withTo('now') +
       dashboard.withVariables(variables) +
       dashboard.withLinks(
-        [
-          dashboard.link.dashboards.new('Kubernetes Events', $._config.tags) +
-          dashboard.link.link.options.withTargetBlank(true),
-        ]
+        mixinUtils.dashboards.dashboardLinks('Kubernetes Events', $._config)
       ) +
       dashboard.withPanels(
         rows
+      ) +
+      dashboard.withAnnotations(
+        mixinUtils.dashboards.annotations($._config, defaultFilters)
       ),
   },
 }

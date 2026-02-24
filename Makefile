@@ -89,8 +89,8 @@ clean:
 	git clean -Xfd .
 
 .PHONY: test
-test: $(PROMTOOL_BIN) prometheus_alerts.yaml
-	@$(PROMTOOL_BIN) test rules tests.yaml
+test: $(PROMTOOL_BIN) prometheus_alerts.yaml prometheus_rules.yaml
+	@$(PROMTOOL_BIN) test rules tests/*.yaml
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)

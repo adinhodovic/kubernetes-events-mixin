@@ -12,6 +12,10 @@
 
     grafanaUrl: 'https://grafana.com',
 
+    // Opt-in to multiCluster dashboards by overriding this and the clusterLabel.
+    showMultiCluster: false,
+    clusterLabel: 'cluster',
+
     // Dashboard panel configuration
     dashboardPanels: {
       // Maximum number of log lines to display in the events logs panel
@@ -30,5 +34,15 @@
     },
 
     tags: ['kubernetes', 'kubernetes-events', 'kubernetes-events-mixin'],
+
+    // Custom annotations to display in graphs
+    annotation: {
+      enabled: false,
+      name: 'Custom Annotation',
+      tags: [],
+      datasource: '-- Grafana --',
+      iconColor: 'blue',
+      type: 'tags',
+    },
   },
 }
