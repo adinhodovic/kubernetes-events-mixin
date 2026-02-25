@@ -115,7 +115,7 @@ local pcOverride = pcStandardOptions.override;
               then
                 [
                   tbStandardOptions.override.byName.new('cluster') +
-                  tbStandardOptions.override.byName.withProperty('custom.hideFrom.viz', true)
+                  tbStandardOptions.override.byName.withProperty('custom.hideFrom.viz', true),
                 ]
               else
                 []
@@ -155,7 +155,7 @@ local pcOverride = pcStandardOptions.override;
               then
                 [
                   tbStandardOptions.override.byName.new('cluster') +
-                  tbStandardOptions.override.byName.withProperty('custom.hideFrom.viz', true)
+                  tbStandardOptions.override.byName.withProperty('custom.hideFrom.viz', true),
                 ]
               else
                 []
