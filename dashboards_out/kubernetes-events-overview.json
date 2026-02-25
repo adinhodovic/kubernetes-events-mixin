@@ -510,9 +510,7 @@
                "uid": "${datasource}"
             },
             "hide": 2,
-            "includeAll": true,
             "label": "Cluster",
-            "multi": true,
             "name": "cluster",
             "query": "label_values(namespace_kind_type:kubernetes_events:count1m{}, cluster)",
             "refresh": 2,

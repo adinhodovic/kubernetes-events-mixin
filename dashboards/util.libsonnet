@@ -73,13 +73,14 @@ local textbox = variable.textbox;
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
         query.generalOptions.withLabel('Cluster') +
-        query.selectionOptions.withMulti(true) +
-        query.selectionOptions.withIncludeAll(true) +
         query.refresh.onLoad() +
         query.refresh.onTime() +
         (
           if config.showMultiCluster
-          then query.generalOptions.showOnDashboard.withLabelAndValue()
+          then
+            query.generalOptions.showOnDashboard.withLabelAndValue() +
+            query.selectionOptions.withMulti(value=config.allowMultiClusterSelection) +
+            query.selectionOptions.withIncludeAll(value=config.includeAllValue)
           else query.generalOptions.showOnDashboard.withNothing()
         ) +
         // Loki-specific query structure
@@ -98,13 +99,14 @@ local textbox = variable.textbox;
         query.withDatasourceFromVariable(this.datasource) +
         query.withSort(1) +
         query.generalOptions.withLabel('Cluster') +
-        query.selectionOptions.withMulti(true) +
-        query.selectionOptions.withIncludeAll(true) +
         query.refresh.onLoad() +
         query.refresh.onTime() +
         (
           if config.showMultiCluster
-          then query.generalOptions.showOnDashboard.withLabelAndValue()
+          then
+            query.generalOptions.showOnDashboard.withLabelAndValue() +
+            query.selectionOptions.withMulti(value=config.allowMultiClusterSelection) +
+            query.selectionOptions.withIncludeAll(value=config.includeAllValue)
           else query.generalOptions.showOnDashboard.withNothing()
         ),
 

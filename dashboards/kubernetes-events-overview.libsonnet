@@ -110,6 +110,16 @@ local pcOverride = pcStandardOptions.override;
                 },
               }),
             ],
+            overrides=(
+              if std.all([$._config.showMultiCluster, !$._config.allowMultiClusterSelection])
+              then
+                [
+                  tbStandardOptions.override.byName.new('cluster') +
+                  tbStandardOptions.override.byName.withProperty('custom.hideFrom.viz', true)
+                ]
+              else
+                []
+            )
           ) +
           tbStandardOptions.withLinks([timelineLink]),
 
@@ -140,6 +150,16 @@ local pcOverride = pcStandardOptions.override;
                 },
               }),
             ],
+            overrides=(
+              if std.all([$._config.showMultiCluster, !$._config.allowMultiClusterSelection])
+              then
+                [
+                  tbStandardOptions.override.byName.new('cluster') +
+                  tbStandardOptions.override.byName.withProperty('custom.hideFrom.viz', true)
+                ]
+              else
+                []
+            ),
           ) +
           tbStandardOptions.withLinks([timelineLink]),
 
