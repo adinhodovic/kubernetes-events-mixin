@@ -79,8 +79,8 @@ local textbox = variable.textbox;
           if config.showMultiCluster
           then
             query.generalOptions.showOnDashboard.withLabelAndValue() +
-            query.selectionOptions.withMulti(value=config.allowMultiClusterSelection) +
-            query.selectionOptions.withIncludeAll(value=config.includeAllValue)
+            query.selectionOptions.withMulti(value=config.multiClusterAllowsMultipleSelection) +
+            query.selectionOptions.withIncludeAll(value=config.multiClusterIncludeAllValue)
           else query.generalOptions.showOnDashboard.withNothing()
         ) +
         // Loki-specific query structure
@@ -105,8 +105,8 @@ local textbox = variable.textbox;
           if config.showMultiCluster
           then
             query.generalOptions.showOnDashboard.withLabelAndValue() +
-            query.selectionOptions.withMulti(value=config.allowMultiClusterSelection) +
-            query.selectionOptions.withIncludeAll(value=config.includeAllValue)
+            query.selectionOptions.withMulti(value=config.multiClusterAllowsMultipleSelection) +
+            query.selectionOptions.withIncludeAll(value=config.multiClusterIncludeAllValue)
           else query.generalOptions.showOnDashboard.withNothing()
         ),
 

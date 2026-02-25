@@ -111,7 +111,7 @@ local pcOverride = pcStandardOptions.override;
               }),
             ],
             overrides=(
-              if std.all([$._config.showMultiCluster, !$._config.allowMultiClusterSelection])
+              if std.all([$._config.showMultiCluster, !$._config.multiClusterAllowsMultipleSelection])
               then
                 [
                   tbStandardOptions.override.byName.new('cluster') +
@@ -151,7 +151,7 @@ local pcOverride = pcStandardOptions.override;
               }),
             ],
             overrides=(
-              if std.all([$._config.showMultiCluster, !$._config.allowMultiClusterSelection])
+              if std.all([$._config.showMultiCluster, !$._config.multiClusterAllowsMultipleSelection])
               then
                 [
                   tbStandardOptions.override.byName.new('cluster') +
