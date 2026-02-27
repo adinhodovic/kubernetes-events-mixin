@@ -34,7 +34,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
 
       local queries = {
         events: |||
-          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "Name: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
+          {%(logs)s} | k8s_resource_name=~"$name.*" |~ "$search" | json | line_format "\nName: {{ .name }}\nType: {{ .type }}\nReason: {{.reason}}\nMsg: {{.msg}}"
         ||| % defaultFilters,
 
         eventsTimeline: |||
@@ -80,7 +80,8 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
               slStandardOptions.mapping.RegexMap.options.result.withColor('orange') +
               slStandardOptions.mapping.RegexMap.options.result.withIndex(1),
             ],
-            insertNulls=300000,
+            // Disconnect threshold is set to 1m because events can be far apart, but we don't want to connect events that are too far apart, otherwise the timeline becomes hard to read.
+            insertNulls=$._config.dashboardPanels.timelineDisconnectThresholdSeconds * 1000,
           ),
       };
 
