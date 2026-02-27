@@ -26,6 +26,7 @@
       maxLinesEventsLogs: 200,
       // Maximum number of log lines to display in the events timeline panel
       maxLinesEventsTimeline: 100,
+      timelineDisconnectThresholdSeconds: 60,
     },
 
     dashboardIds: {

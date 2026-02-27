@@ -59,7 +59,7 @@
                   "type": "loki",
                   "uid": "$datasource"
                },
-               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\",\nk8s_event_type=~\"$type\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format \"Name: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
+               "expr": "{job=~\"$job\",\ncluster=~\"$cluster\",\nk8s_resource_kind=\"$kind\",\nk8s_namespace_name=~\"$namespace\",\nk8s_event_type=~\"$type\"\n} | k8s_resource_name=~\"$name.*\" |~ \"$search\" | json | line_format \"\\nName: {{ .name }}\\nType: {{ .type }}\\nReason: {{.reason}}\\nMsg: {{.msg}}\"\n",
                "maxLines": 200
             }
          ],
@@ -75,7 +75,7 @@
          "fieldConfig": {
             "defaults": {
                "custom": {
-                  "insertNulls": 300000
+                  "insertNulls": 60000
                },
                "mappings": [
                   {
