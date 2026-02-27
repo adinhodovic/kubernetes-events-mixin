@@ -48,7 +48,10 @@
          },
          "id": 2,
          "options": {
+            "detailsMode": "sidebar",
             "enableLogDetails": true,
+            "fontSize": "small",
+            "showControls": true,
             "showTime": true,
             "wrapLogMessage": true
          },
