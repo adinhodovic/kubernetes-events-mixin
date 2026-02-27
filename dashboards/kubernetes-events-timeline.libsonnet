@@ -52,6 +52,7 @@ local slQueryOptions = stateTimelinePanel.queryOptions;
             showTime=true,
             wrapLogMessage=true,
             enableLogDetails=true,
+            fontSize='small',
           ),
 
         eventsTimeline:
