@@ -80,7 +80,7 @@ local pcOverride = pcStandardOptions.override;
             '{{k8s_resource_kind}} {{k8s_namespace_name}} {{type}}',
             calcs=['lastNotNull', 'mean', 'max'],
             stack='normal',
-            description='Total Event Emissions by Kind and Namespace[1w]',
+            description='Rate of Kubernetes events emitted over time, broken down by resource kind, namespace, and type (Normal/Warning). Use this to identify unusual spikes in event activity that may indicate application or cluster issues.',
           ),
 
         eventsCountNormalSumTable:
@@ -88,7 +88,7 @@ local pcOverride = pcStandardOptions.override;
             'Top 10 Normal Event Emissions by Kind and Namespace[1w]',
             'short',
             queries.eventsCountNormalSum,
-            description='Top 10 Normal Event Emissions by Kind and Namespace[1w]',
+            description='Top 10 resource/namespace combinations with the highest Normal event count over the past week. Normal events are informational and indicate routine operations such as pod scheduling, image pulls, and container starts. High counts may point to frequent restarts or scaling activity.',
             sortBy={ name: 'Value', desc: true },
             transformations=[
               tbQueryOptions.transformation.withId('organize') +
@@ -128,7 +128,7 @@ local pcOverride = pcStandardOptions.override;
             'Top 10 Warning Event Emissions by Kind and Namespace[1w]',
             'short',
             queries.eventsCountWarningSum,
-            description='Top 10 Warning Event Emissions by Kind and Namespace[1w]',
+            description='Top 10 resource/namespace combinations with the highest Warning event count over the past week. Warning events signal potential problems such as failed liveness probes, OOMKilled containers, image pull failures, or insufficient resources. Click a row to drill down into the Events Timeline.',
             sortBy={ name: 'Value', desc: true },
             transformations=[
               tbQueryOptions.transformation.withId('organize') +
@@ -170,7 +170,7 @@ local pcOverride = pcStandardOptions.override;
             'short',
             queries.eventsCountByType1w,
             '{{ type }}',
-            description='Events by Type[1w]',
+            description='Distribution of Kubernetes events by type (Normal vs Warning) over the past week. A high proportion of Warning events relative to Normal events may indicate cluster instability or recurring workload issues.',
             labels=['value', 'percent'],
             values=['value', 'percent'],
             overrides=[
@@ -195,7 +195,7 @@ local pcOverride = pcStandardOptions.override;
             '{{type}}',
             calcs=['lastNotNull', 'mean', 'max'],
             stack='normal',
-            description='Events by Type',
+            description='Real-time rate of Kubernetes events broken down by type (Normal/Warning). Use this alongside the pie chart to detect sudden increases in Warning events that may require immediate investigation.',
           ),
 
         eventsCountByResourceTable:
@@ -203,7 +203,7 @@ local pcOverride = pcStandardOptions.override;
             'Top 20 Event Emissions by Resource[1w]',
             'short',
             queries.eventsCountByResource,
-            description='Top 20 Event Emissions by Resource[1w]',
+            description='Top 20 individual resources ranked by total event count over the past week, across all event types. Use this to pinpoint the noisiest or most troubled resources in your cluster. Click a row to navigate to the Events Timeline for that specific resource.',
             sortBy={ name: 'Value', desc: true },
             transformations=[
               tbQueryOptions.transformation.withId('organize') +
