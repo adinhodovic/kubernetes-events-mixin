@@ -33,16 +33,16 @@ alloy:
         }
         stage.labels {
           values = {
-              k8s_resource_kind: 'k8s_resource_kind',
-              k8s_resource_name: 'k8s_resource_name',
-              k8s_event_type: 'k8s_event_type',
-                // This comes with alloy's event source.
-              k8s_namespace_name: 'namespace',
+            "k8s_resource_kind" = "",
+            "k8s_resource_name" = "",
+            "k8s_event_type" = "",
+            // This comes with alloy's event source.
+            "k8s_namespace_name" = "namespace",
           }
         }
         stage.structured_metadata {
           values = {
-            "k8s_resource_name" = "k8s_resource_name"
+            "k8s_resource_name" = ""
           }
         }
         stage.label_keep {
